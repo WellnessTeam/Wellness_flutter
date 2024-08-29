@@ -3,9 +3,11 @@ import 'package:frontend/constants/gaps.dart';
 import 'package:frontend/constants/sizes.dart';
 import 'package:frontend/features/home/views/widgets/nav_tab.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:go_router/go_router.dart';
 
 class HomeScreen extends StatefulWidget {
   static const String routeName = "home";
+  static const String routeURL = "/home/:tab"; // URL에서 tab을 변수로 받음
 
   final String tab;
 
@@ -54,6 +56,10 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _selectedIndex = index;
     });
+
+    // 선택된 탭에 맞는 라우트로 이동
+    String selectedTab = tabs[index];
+    context.go('/home/$selectedTab');
   }
 
   Widget _buildPlaceholderScreen(String title) {

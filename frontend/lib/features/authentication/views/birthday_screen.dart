@@ -3,10 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/constants/gaps.dart';
 import 'package:frontend/constants/sizes.dart';
 import 'package:frontend/features/authentication/view_models/signup_view_model.dart';
-import 'package:frontend/features/authentication/views/profile_details_screen.dart';
+import 'package:frontend/features/authentication/views/gender_screen.dart';
 import 'package:frontend/features/authentication/views/widgets/form_button.dart';
+import 'package:frontend/features/authentication/views/widgets/status_bar.dart';
+import 'package:go_router/go_router.dart';
 
 class BirthdayScreen extends ConsumerStatefulWidget {
+  static String routeName = "birthday";
+  static String routeURL = "/birthday";
+
   const BirthdayScreen({super.key});
 
   @override
@@ -36,10 +41,7 @@ class _BirthdayScreenState extends ConsumerState<BirthdayScreen> {
       ...state,
       "birthday": _birthdayController.text,
     };
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const ProfileDetailsScreen()),
-    );
+    context.goNamed(GenderScreen.routeName);
   }
 
   void _setTextFieldDate(DateTime date) {
@@ -74,20 +76,14 @@ class _BirthdayScreenState extends ConsumerState<BirthdayScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const SizedBox(height: Sizes.size20),
+            const StatusBar(currentStep: 1, totalSteps: 4), // 현재 스텝을 1로 설정
             Gaps.v40,
             const Text(
               "When's your birthday?",
               style: TextStyle(
                 fontSize: Sizes.size24,
                 fontWeight: FontWeight.w700,
-              ),
-            ),
-            Gaps.v8,
-            const Text(
-              "Your birthday won't be shown publicly.",
-              style: TextStyle(
-                fontSize: Sizes.size16,
-                color: Colors.black54,
               ),
             ),
             Gaps.v16,
@@ -114,7 +110,7 @@ class _BirthdayScreenState extends ConsumerState<BirthdayScreen> {
             ),
             Gaps.v28,
             GestureDetector(
-              onTap: _onNextTap,
+              onTap: _birthdayController.text.isNotEmpty ? _onNextTap : null,
               child: FormButton(
                 disabled: _birthdayController.text.isEmpty,
                 text: "Next",
