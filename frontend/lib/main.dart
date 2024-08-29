@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:frontend/features/authentication/views/sign_up_screen.dart';
+import 'package:frontend/features/authentication/views/height_screen.dart';
 import 'package:frontend/features/authentication/views/login_screen.dart';
+import 'package:frontend/features/authentication/views/birthday_screen.dart'; // BirthdayScreen import
+import 'package:frontend/features/authentication/views/gender_screen.dart'; // ProfileDetailsScreen import
+import 'package:frontend/features/authentication/views/weight_screen.dart';
+import 'package:frontend/features/home/views/home_screen.dart'; // HomeScreen import
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -33,8 +37,7 @@ class MyApp extends StatelessWidget {
       ],
       supportedLocales: const [
         Locale('en'), // English
-
-        Locale('ko'), // Spanish
+        Locale('ko'), // Korean
       ],
     );
   }
@@ -42,18 +45,40 @@ class MyApp extends StatelessWidget {
 
 // GoRouter 설정
 final GoRouter _router = GoRouter(
+  //initialLocation: BirthdayScreen.routeURL,
   routes: [
     GoRoute(
-      name: SignUpScreen.routeName,
-      path: SignUpScreen.routeURL,
-      builder: (context, state) => const SignUpScreen(), // '/'
-    ),
-    GoRoute(
       name: LoginScreen.routeName,
-      path: LoginScreen.routeURL, //    '/login'
-
+      path: LoginScreen.routeURL,
       builder: (context, state) => const LoginScreen(),
     ),
-    // 추가적인 라우트를 여기에 정의할 수 있습니다.
+    GoRoute(
+      name: BirthdayScreen.routeName,
+      path: BirthdayScreen.routeURL,
+      builder: (context, state) => const BirthdayScreen(),
+    ),
+    GoRoute(
+      name: GenderScreen.routeName,
+      path: GenderScreen.routeURL,
+      builder: (context, state) => const GenderScreen(),
+    ),
+    GoRoute(
+      name: HeightScreen.routeName,
+      path: HeightScreen.routeURL,
+      builder: (context, state) => const HeightScreen(),
+    ),
+    GoRoute(
+      name: WeightScreen.routeName,
+      path: WeightScreen.routeURL,
+      builder: (context, state) => const WeightScreen(),
+    ),
+    GoRoute(
+      name: HomeScreen.routeName,
+      path: HomeScreen.routeURL, // "/home/:tab"
+      builder: (context, state) {
+        final tab = state.pathParameters['tab'] ?? 'home'; // 탭 값 가져오기
+        return HomeScreen(tab: tab);
+      },
+    ),
   ],
 );

@@ -8,7 +8,7 @@ class DummyUserRepository {
   // UID를 기준으로 사용자 프로필을 찾는 메서드
   Future<Map<String, dynamic>?> findProfile(String uid) async {
     // 서버가 있다고 가정하고 약간의 딜레이를 줍니다.
-    await Future.delayed(Duration(seconds: 1));
+    await Future.delayed(const Duration(seconds: 1));
 
     // 사용자가 있으면 데이터를 반환하고, 없으면 null 반환
     if (_users.containsKey(uid)) {
@@ -20,13 +20,13 @@ class DummyUserRepository {
 
   // 새로운 사용자 프로필을 생성하는 메서드
   Future<void> createProfile(UserProfileModel profile) async {
-    await Future.delayed(Duration(seconds: 1));
+    await Future.delayed(const Duration(seconds: 1));
     _users[profile.uid] = profile; // 사용자 프로필 저장
   }
 
   // 사용자의 프로필을 업데이트하는 메서드
   Future<void> updateUser(String uid, Map<String, dynamic> updates) async {
-    await Future.delayed(Duration(seconds: 1));
+    await Future.delayed(const Duration(seconds: 1));
     if (_users.containsKey(uid)) {
       final user = _users[uid]!;
       _users[uid] = user.copyWith(
