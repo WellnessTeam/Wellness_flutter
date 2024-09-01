@@ -2,14 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:frontend/features/authentication/views/height_screen.dart';
 import 'package:frontend/features/authentication/views/login_screen.dart';
-import 'package:frontend/features/authentication/views/birthday_screen.dart'; // BirthdayScreen import
-import 'package:frontend/features/authentication/views/gender_screen.dart'; // ProfileDetailsScreen import
+import 'package:frontend/features/authentication/views/birthday_screen.dart';
+import 'package:frontend/features/authentication/views/gender_screen.dart';
 import 'package:frontend/features/authentication/views/weight_screen.dart';
-import 'package:frontend/features/home/views/home_screen.dart'; // HomeScreen import
+import 'package:frontend/features/home/views/home_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:frontend/features/home/views/analyze_page.dart';
+import 'package:image_picker/image_picker.dart'; // AnalyzePage import
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized(); // 플러그인 초기화
   runApp(
     const ProviderScope(
       child: MyApp(),
@@ -45,7 +48,6 @@ class MyApp extends StatelessWidget {
 
 // GoRouter 설정
 final GoRouter _router = GoRouter(
-  //initialLocation: BirthdayScreen.routeURL,
   routes: [
     GoRoute(
       name: LoginScreen.routeName,
@@ -78,6 +80,13 @@ final GoRouter _router = GoRouter(
       builder: (context, state) {
         final tab = state.pathParameters['tab'] ?? 'home'; // 탭 값 가져오기
         return HomeScreen(tab: tab);
+      },
+    ),
+    GoRoute(
+      path: '/analyze',
+      builder: (context, state) {
+        final image = state.extra as XFile;
+        return AnalyzePage(image: image);
       },
     ),
   ],
