@@ -159,9 +159,9 @@ class _HomeScreenState extends State<HomeScreen> {
             NavTab(
               text: "Record",
               isSelected: _selectedIndex == 1,
-              icon: FontAwesomeIcons.microphone,
+              icon: FontAwesomeIcons.utensils,
               onTap: () => _onTap(1),
-              selectedIcon: FontAwesomeIcons.microphone,
+              selectedIcon: FontAwesomeIcons.utensils,
             ),
           ],
         ),
