@@ -25,8 +25,8 @@ class FormButton extends StatelessWidget {
               ? null
               : const LinearGradient(
                   colors: [
-                    Color(0xFF00c6ff), // 밝은 파란색
-                    Color(0xFF0072ff), // 진한 파란색
+                    Color.fromARGB(255, 0, 0, 0), // 밝은 파란색
+                    Color.fromARGB(255, 0, 0, 0), // 진한 파란색
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,

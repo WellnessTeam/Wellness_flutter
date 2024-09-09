@@ -25,24 +25,62 @@ class LoginScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Gaps.v80,
-              const Text(
-                "Login to myApp",
-                style: TextStyle(
-                  fontSize: Sizes.size24,
-                  fontWeight: FontWeight.w700,
+              Center(
+                child: Column(
+                  children: [
+                    Image.asset(
+                      'assets/images/new_rabbit.png', // 여기에 로고 이미지 경로를 입력하세요
+                      height: 300, // 이미지 높이를 조정하세요
+                    ),
+                    Gaps.v10, // 이미지와 앱 이름 사이에 간격을 추가
+                    const Text(
+                      "WELLNESS", // 여기에 앱 이름을 입력하세요
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: "appname",
+                        fontSize: Sizes.size40,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               Gaps.v20,
-              const Opacity(
-                opacity: 0.7,
-                child: Text(
-                  "Manage your account, check notifications, comment on videos, and more.",
-                  style: TextStyle(
-                    fontSize: Sizes.size16,
-                    fontWeight: FontWeight.w600,
-                  ),
+              Gaps.v20,
+              const Center(
+                // 이 부분을 추가하여 텍스트를 중앙 정렬
+                child: Column(
+                  children: [
+                    Opacity(
+                      opacity: 0.7,
+                      child: Text(
+                        "사진 업로드 한 번으로 끝내는",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: "pretendard-regular",
+                          fontSize: Sizes.size18,
+                          fontWeight: FontWeight.w600,
+                          //fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ),
+                    Opacity(
+                      opacity: 0.7,
+                      child: Text(
+                        "'빠르고 간편한' 식단 관리 앱",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: "pretendard-regular",
+                          fontSize: Sizes.size18,
+                          fontWeight: FontWeight.w600,
+                          //fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
+              Gaps.v40,
               Gaps.v40,
               _KakaoLoginButton(onTap: _onKakaoLoginTap),
             ],
@@ -100,13 +138,14 @@ class _KakaoLoginButtonState extends State<_KakaoLoginButton> {
                 Align(
                   alignment: Alignment.centerLeft,
                   child: FaIcon(
-                    FontAwesomeIcons.comment,
+                    FontAwesomeIcons.solidComment,
                     color: Color(0xFF000000),
                   ),
                 ),
                 Text(
-                  "Continue with Kakao",
+                  "카카오로 시작하기",
                   style: TextStyle(
+                    fontFamily: "pretendard-regular",
                     fontSize: Sizes.size16,
                     fontWeight: FontWeight.w600,
                     color: Color.fromRGBO(0, 0, 0, 0.85),

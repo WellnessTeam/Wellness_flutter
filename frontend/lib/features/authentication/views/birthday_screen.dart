@@ -69,21 +69,41 @@ class _BirthdayScreenState extends ConsumerState<BirthdayScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Sign up"),
+        title: const Padding(
+          padding: EdgeInsets.only(left: 22.0, top: 10.0),
+          child: Text(
+            "필수 정보 입력",
+            style: TextStyle(
+              fontSize: 20,
+              fontFamily: "pretendard-regular",
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        backgroundColor: Colors.white,
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: Sizes.size36),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: Sizes.size20),
-            const StatusBar(currentStep: 1, totalSteps: 4), // 현재 스텝을 1로 설정
+            const SizedBox(height: Sizes.size10),
+            StatusBar(
+              currentStep: 1,
+              totalSteps: 4,
+              width: MediaQuery.of(context).size.width,
+              stepCompleteColor: Colors.blue,
+              currentStepColor: const Color(0xffdbecff),
+              inactiveColor: const Color(0xffbababa),
+              lineWidth: 3.5,
+            ), // 현재 스텝을 1로 설정
             Gaps.v40,
             const Text(
-              "When's your birthday?",
+              "생년월일을 선택해주세요.",
               style: TextStyle(
-                fontSize: Sizes.size24,
-                fontWeight: FontWeight.w700,
+                fontFamily: "pretendard-regular",
+                fontSize: Sizes.size20,
+                fontWeight: FontWeight.w600,
               ),
             ),
             Gaps.v16,
@@ -112,9 +132,7 @@ class _BirthdayScreenState extends ConsumerState<BirthdayScreen> {
             GestureDetector(
               onTap: _birthdayController.text.isNotEmpty ? _onNextTap : null,
               child: FormButton(
-                disabled: _birthdayController.text.isEmpty,
-                text: "Next",
-              ),
+                  disabled: _birthdayController.text.isEmpty, text: "Next"),
             ),
           ],
         ),
