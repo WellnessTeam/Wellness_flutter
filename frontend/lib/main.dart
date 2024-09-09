@@ -10,9 +10,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:frontend/features/home/views/analyze_page.dart';
 import 'package:image_picker/image_picker.dart'; // AnalyzePage import
+import 'package:flutter/services.dart'; // SystemChrome import
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized(); // 플러그인 초기화
+
+  // 상태바 스타일 설정
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent, // 투명한 상태바 설정
+    statusBarIconBrightness: Brightness.dark, // 상태바 아이콘을 어두운 색으로 설정
+  ));
+
   runApp(
     const ProviderScope(
       child: MyApp(),
@@ -27,11 +35,19 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
-      title: 'Your App',
+      title: 'Wellness',
       routerConfig: _router,
       theme: ThemeData(
         primaryColor: const Color(0xff28B0EE),
         useMaterial3: true,
+        scaffoldBackgroundColor: const Color.fromARGB(255, 255, 255, 255),
+        // appBarTheme: const AppBarTheme(
+        //   //backgroundColor: Colors.white, // AppBar의 배경색을 상태바와 동일하게 설정
+        //   systemOverlayStyle: SystemUiOverlayStyle(
+        //     statusBarColor: Colors.white, // 상태바의 배경색을 일치시킴
+        //     statusBarIconBrightness: Brightness.dark, // 상태바 아이콘을 어둡게 설정
+        //   ),
+        // ),
       ),
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,

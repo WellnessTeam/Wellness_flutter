@@ -20,11 +20,34 @@ class WeightScreen extends ConsumerStatefulWidget {
 
 class _WeightScreenState extends ConsumerState<WeightScreen> {
   final TextEditingController _weightController = TextEditingController();
+  String? _errorMessage;
 
   @override
   void dispose() {
     _weightController.dispose();
     super.dispose();
+  }
+
+  void _validateInput(String input) {
+    final regex = RegExp(r'^\d{2,3}(\.\d{0,1})?$');
+
+    if (regex.hasMatch(input)) {
+      final double? value = double.tryParse(input);
+
+      if (value != null && value >= 20.0 && value <= 300.0) {
+        setState(() {
+          _errorMessage = null;
+        });
+      } else {
+        setState(() {
+          _errorMessage = "20 - 300 사이의 값을 입력해주세요.";
+        });
+      }
+    } else {
+      setState(() {
+        _errorMessage = "유효하지 않는 값입니다.";
+      });
+    }
   }
 
   void _onNextTap() {
@@ -45,26 +68,46 @@ class _WeightScreenState extends ConsumerState<WeightScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Sign up"),
+        title: const Padding(
+          padding: EdgeInsets.only(top: 10.0, bottom: 10.0),
+          child: Text(
+            "필수 정보 입력",
+            style: TextStyle(
+              fontSize: 20,
+              fontFamily: "pretendard-regular",
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
-            context.pop();
+            context.goNamed("height");
           },
         ),
+        backgroundColor: Colors.white,
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: Sizes.size36),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: Sizes.size20),
-            const StatusBar(currentStep: 4, totalSteps: 4), // 현재 스텝을 4로 설정
+            const SizedBox(height: Sizes.size10),
+            StatusBar(
+              currentStep: 4,
+              totalSteps: 4,
+              width: MediaQuery.of(context).size.width,
+              stepCompleteColor: Colors.blue,
+              currentStepColor: const Color(0xffdbecff),
+              inactiveColor: const Color(0xffbababa),
+              lineWidth: 3.5,
+            ), // 현재 스텝을 4로 설정
             Gaps.v40,
             const Text(
-              "Enter your weight (kg)",
+              "체중(kg)을 입력해주세요.",
               style: TextStyle(
-                fontSize: Sizes.size24,
+                fontFamily: "pretendard-regular",
+                fontSize: Sizes.size20,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -73,28 +116,40 @@ class _WeightScreenState extends ConsumerState<WeightScreen> {
               controller: _weightController,
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
-                hintText: "Weight",
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(
-                    color: Colors.grey.shade400,
+                  hintText: "예시) 70.5",
+                  hintStyle: TextStyle(
+                    fontFamily: "pretendard-regular",
+                    color: Colors.grey.shade700,
                   ),
-                ),
-                focusedBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(
-                    color: Colors.grey.shade400,
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(
+                      color: Colors.grey.shade500,
+                    ),
                   ),
-                ),
-              ),
+                  focusedBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(
+                      color: Colors.grey.shade400,
+                    ),
+                  ),
+                  errorText: _errorMessage,
+                  errorStyle: const TextStyle(
+                    fontFamily: "pretendard-regular",
+                    fontSize: Sizes.size18,
+                  )),
               cursorColor: Theme.of(context).primaryColor,
-              onChanged: (_) {
-                setState(() {});
+              onChanged: (value) {
+                _validateInput(value);
+                // setState(() {});
               },
             ),
             Gaps.v28,
             GestureDetector(
-              onTap: _weightController.text.isNotEmpty ? _onNextTap : null,
+              onTap: _weightController.text.isNotEmpty && _errorMessage == null
+                  ? _onNextTap
+                  : null,
               child: FormButton(
-                disabled: _weightController.text.isEmpty,
+                disabled:
+                    _weightController.text.isEmpty || _errorMessage != null,
                 text: "Finish",
               ),
             ),
