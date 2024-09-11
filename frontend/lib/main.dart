@@ -9,6 +9,7 @@ import 'package:frontend/features/home/views/home_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:frontend/features/home/views/analyze_page.dart';
+import 'package:frontend/features/home/views/record_screen.dart';
 import 'package:image_picker/image_picker.dart'; // AnalyzePage import
 import 'package:flutter/services.dart'; // SystemChrome import
 
@@ -103,6 +104,16 @@ final GoRouter _router = GoRouter(
       builder: (context, state) {
         final image = state.extra as XFile;
         return AnalyzePage(image: image);
+      },
+    ),
+    GoRoute(
+      path: '/home/record',
+      builder: (context, state) {
+        final newRecord = state.extra as Map<String, dynamic>?;
+        return RecordScreen(
+          isLatestFirst: true, // 기본 정렬 상태
+          newRecord: newRecord, // 새로운 기록 전달
+        );
       },
     ),
   ],

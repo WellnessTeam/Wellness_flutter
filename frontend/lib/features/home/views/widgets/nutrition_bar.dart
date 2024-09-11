@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 class NutritionBar extends StatelessWidget {
   final String label; // 영양소 이름
-  final double intake; // 섭취량
-  final double recommended; // 권장 섭취량
+  final int intake; // 섭취량
+  final int recommended; // 권장 섭취량
   final Gradient gradient; // 진행 바의 그라데이션 색상
 
   const NutritionBar({
@@ -36,7 +36,7 @@ class NutritionBar extends StatelessWidget {
               ),
               // 섭취 / 권장 (비율%) 텍스트 표시
               Text(
-                "${intake.toStringAsFixed(1)} / ${recommended.toStringAsFixed(1)} (${(percentage * 100).toStringAsFixed(1)}%)",
+                "${intake.toStringAsFixed(0)} / ${recommended.toStringAsFixed(0)} (${(percentage * 100).toStringAsFixed(0)}%)",
                 style: const TextStyle(
                   fontFamily: "myfonts",
                   fontSize: 16,

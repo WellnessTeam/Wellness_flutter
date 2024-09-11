@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/constants/sizes.dart';
 import 'package:frontend/constants/gaps.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+//import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
 class LoginScreen extends ConsumerWidget {
@@ -125,34 +125,12 @@ class _KakaoLoginButtonState extends State<_KakaoLoginButton> {
             width: double.infinity,
             padding: const EdgeInsets.all(Sizes.size14),
             decoration: BoxDecoration(
-              color: const Color(0xfffee500),
-              border: Border.all(
-                color: Colors.grey.shade300,
-                width: Sizes.size1,
-              ),
+              color: Colors.transparent, // No background needed for an image
               borderRadius: BorderRadius.circular(12.0),
             ),
-            child: const Stack(
-              alignment: Alignment.center,
-              children: [
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: FaIcon(
-                    FontAwesomeIcons.solidComment,
-                    color: Color(0xFF000000),
-                  ),
-                ),
-                Text(
-                  "카카오로 시작하기",
-                  style: TextStyle(
-                    fontFamily: "pretendard-regular",
-                    fontSize: Sizes.size16,
-                    fontWeight: FontWeight.w600,
-                    color: Color.fromRGBO(0, 0, 0, 0.85),
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
+            child: Image.asset(
+              'assets/images/kakao_login_medium_wide.png', // Use the uploaded image
+              fit: BoxFit.contain, // Adjust the image to fit the container
             ),
           ),
         ),

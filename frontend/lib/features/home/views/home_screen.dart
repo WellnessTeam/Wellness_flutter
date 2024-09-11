@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'record_screen.dart';
+import 'package:frontend/features/home/repos/nutrition_repository.dart'; // 리포지토리 추가
 import 'package:flutter/services.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -28,10 +29,62 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   double intakeRatio = 0.0;
-  final List<String> tabs = [
-    "home",
-    "record",
-  ];
+  final List<String> tabs = ["home", "record"];
+  Map<String, dynamic> jsonData = {
+    'nickname': '아무개', // 기본 닉네임
+    'total_kcal': 0, // 기본 섭취 칼로리
+    'rec_kcal': 2000, // 기본 권장 칼로리
+    'total_car': 0, // 기본 탄수화물 섭취
+    'total_prot': 0, // 기본 단백질 섭취
+    'total_fat': 0, // 기본 지방 섭취
+    'rec_car': 300, // 기본 탄수화물 권장량
+    'rec_prot': 50, // 기본 단백질 권장량
+    'rec_fat': 70, // 기본 지방 권장량
+  }; // 기본값을 설정
+  final NutritionRepository nutritionRepository =
+      NutritionRepository(); // API 리포지토리
+
+  bool _isLoading = true; // 로딩상태 관리
+  bool _isLatestFirst = true; // 정렬 상태
+  late int _selectedIndex;
+  bool _isRequestingPermission = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedIndex = _getIndexFromTab(widget.tab);
+    _loadNutritionData(); // 데이터를 로드
+
+    // 5초 후 로딩을 중단하고 기본 값을 보여주도록 설정
+    Future.delayed(const Duration(seconds: 5), () {
+      if (_isLoading) {
+        setState(() {
+          _isLoading = false; // 5초 후 로딩 상태를 해제하고 기본값을 보여줌
+        });
+      }
+    });
+  }
+
+  // API에서 데이터를 받아오는 함수
+  Future<void> _loadNutritionData() async {
+    try {
+      final data = await nutritionRepository.fetchNutritionData();
+      if (mounted) {
+        setState(() {
+          jsonData = data; // API에서 받은 데이터를 저장
+          _isLoading = false; // 데이터를 성공적으로 받으면 로딩 해제
+        });
+      }
+    } catch (e) {
+      debugPrint("데이터를 불러오는 중 오류 발생: $e");
+      // 오류가 발생하면 기본값을 그대로 사용
+      if (mounted) {
+        setState(() {
+          _isLoading = false; // 오류가 발생해도 로딩 해제
+        });
+      }
+    }
+  }
 
   Color _getProgressColor(double intakeRatio) {
     if (intakeRatio < 0.5) {
@@ -43,15 +96,6 @@ class _HomeScreenState extends State<HomeScreen> {
     } else {
       return const Color.fromARGB(255, 255, 61, 87); // 100% 초과 시 빨간색
     }
-  }
-
-  late int _selectedIndex;
-  bool _isRequestingPermission = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedIndex = _getIndexFromTab(widget.tab);
   }
 
   int _getIndexFromTab(String tab) {
@@ -119,197 +163,112 @@ class _HomeScreenState extends State<HomeScreen> {
     context.go('/home/$selectedTab');
   }
 
-  // 동적으로 AppBar 설정
-  bool _isLatestFirst = true; // 정렬 상태
-
-  PreferredSizeWidget _buildAppBar() {
-    if (_selectedIndex == 0) {
-      // 홈 화면 AppBar
-      return AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        title: const Text(
-          "홈 화면",
-          textAlign: TextAlign.left,
-          style: TextStyle(
-            fontFamily: "myfonts",
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
-          ),
-        ),
-        iconTheme: const IconThemeData(
-          color: Colors.black, // 아이콘 색상 고정
-        ),
-        systemOverlayStyle: const SystemUiOverlayStyle(
-          statusBarColor: Colors.white, // 상태바 배경색 고정
-          statusBarIconBrightness: Brightness.dark, // 상태바 아이콘 색상 고정
-        ),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            color: Colors.white, // 고정된 배경색
-          ),
-        ),
-      );
-    } else {
-      // 기록 화면 AppBar
-      return AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        title: const Text(
-          "기록 화면",
-          textAlign: TextAlign.left,
-          style: TextStyle(
-            fontFamily: "myfonts",
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
-          ),
-        ),
-        iconTheme: const IconThemeData(
-          color: Colors.black, // 아이콘 색상 고정
-        ),
-        systemOverlayStyle: const SystemUiOverlayStyle(
-          statusBarColor: Colors.white, // 상태바 배경색 고정
-          statusBarIconBrightness: Brightness.dark, // 상태바 아이콘 색상 고정
-        ),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            color: Colors.white, // 고정된 배경색
-          ),
-        ),
-        actions: [
-          // 정렬 버튼 추가
-          Padding(
-            padding: const EdgeInsets.all(10.0),
-            child: ToggleButtons(
-              isSelected: [_isLatestFirst, !_isLatestFirst], // 선택 상태
-              onPressed: (index) {
-                setState(() {
-                  _isLatestFirst = index == 0;
-                });
-              },
-              color: Colors.black, // 비활성화 상태의 텍스트 색상
-              selectedColor:
-                  const Color.fromARGB(255, 0, 0, 0), // 활성화 상태의 텍스트 색상
-              fillColor:
-                  const Color.fromARGB(255, 211, 235, 255), // 활성화된 버튼의 배경색
-              borderRadius: BorderRadius.circular(10), // 버튼의 모서리를 둥글게
-              borderColor: Colors.black, // 버튼 테두리 색상
-              selectedBorderColor:
-                  const Color.fromARGB(255, 0, 0, 0), // 활성화된 버튼의 테두리 색상
-              borderWidth: 1.2, // 버튼 테두리 두께
-              children: const [
-                Padding(
-                  padding: EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 5), // 버튼 간격 추가
-                  child: Text('최신순',
-                      style: TextStyle(
-                          fontFamily: "pretendard-regular", fontSize: 16)),
-                ),
-                Padding(
-                  padding: EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 5), // 버튼 간격 추가
-                  child: Text('과거순',
-                      style: TextStyle(
-                          fontFamily: "pretendard-regular", fontSize: 16)),
-                ),
-              ],
-            ),
-          )
-        ],
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    // String todayDate = DateFormat('yyyy년 M월 d일').format(DateTime.now());
-
     return Scaffold(
       appBar: _buildAppBar(), // AppBar를 동적으로 설정
       resizeToAvoidBottomInset: false,
       body: Container(
-        color: const Color.fromARGB(32, 255, 231, 231), //background color
+        color: const Color.fromARGB(32, 255, 231, 231), // background color
         child: IndexedStack(
           index: _selectedIndex,
           children: [
-            _buildHomeScreen(context),
+            _isLoading
+                ? const Center(
+                    child: CircularProgressIndicator(), // 로딩 중일 때 로딩 애니메이션 표시
+                  )
+                : _buildHomeScreen(context), // 로딩이 완료되면 홈 화면 표시
             RecordScreen(isLatestFirst: _isLatestFirst),
           ],
         ),
       ),
-      bottomNavigationBar: Container(
-        color: const Color.fromARGB(57, 39, 138, 26),
-        child: Padding(
-          padding: EdgeInsets.symmetric(
-              vertical: MediaQuery.of(context).padding.bottom > 0
-                  ? Sizes.size8
-                  : Sizes.size12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              NavTab(
-                text: "홈",
-                isSelected: _selectedIndex == 0,
-                icon: FontAwesomeIcons.houseUser,
-                onTap: () => _onTap(0),
-                selectedIcon: FontAwesomeIcons.houseUser,
-              ),
-              Gaps.h48,
-              GestureDetector(
-                onTap: _pickImage,
-                child: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: const Color.fromARGB(255, 39, 138, 26),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
-                        spreadRadius: 1,
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: const FaIcon(
-                    size: 30,
-                    FontAwesomeIcons.camera,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-              Gaps.h48,
-              NavTab(
-                text: "나의 오늘",
-                isSelected: _selectedIndex == 1,
-                icon: FontAwesomeIcons.utensils,
-                onTap: () => _onTap(1),
-                selectedIcon: FontAwesomeIcons.utensils,
-              ),
-            ],
+      bottomNavigationBar: _buildBottomNavigationBar(context),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar() {
+    return PreferredSize(
+      preferredSize: const Size.fromHeight(80),
+      child: Padding(
+        padding: const EdgeInsets.only(top: 20),
+        child: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          centerTitle: true,
+          title: Text(
+            _selectedIndex == 0 ? "홈 화면" : "기록 화면",
+            style: const TextStyle(
+              fontFamily: "myfonts",
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
           ),
+          iconTheme: const IconThemeData(
+            color: Colors.black, // 아이콘 색상 고정
+          ),
+          systemOverlayStyle: const SystemUiOverlayStyle(
+            statusBarColor: Colors.white, // 상태바 배경색 고정
+            statusBarIconBrightness: Brightness.dark, // 상태바 아이콘 색상 고정
+          ),
+          actions: _selectedIndex == 1
+              ? [
+                  Padding(
+                    padding: const EdgeInsets.all(10.0),
+                    child: ToggleButtons(
+                      isSelected: [_isLatestFirst, !_isLatestFirst],
+                      onPressed: (index) {
+                        setState(() {
+                          _isLatestFirst = index == 0;
+                        });
+                      },
+                      color: Colors.black,
+                      selectedColor: const Color.fromARGB(255, 0, 0, 0),
+                      fillColor: const Color.fromARGB(255, 211, 235, 255),
+                      borderRadius: BorderRadius.circular(10),
+                      borderColor: Colors.black,
+                      selectedBorderColor: const Color.fromARGB(255, 0, 0, 0),
+                      borderWidth: 1.2,
+                      children: const [
+                        Padding(
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          child: Text('최신순',
+                              style: TextStyle(
+                                  fontFamily: "pretendard-regular",
+                                  fontSize: 16)),
+                        ),
+                        Padding(
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          child: Text('과거순',
+                              style: TextStyle(
+                                  fontFamily: "pretendard-regular",
+                                  fontSize: 16)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ]
+              : null,
         ),
       ),
     );
   }
 
   Widget _buildHomeScreen(BuildContext context) {
-    // 더미 데이터
-    String nickname = "홍길동";
-    int intakeCalories = 1800;
-    int recommendedCalories = 2000;
-    double intakeRatio = intakeCalories / recommendedCalories;
-    int remainingCalories = recommendedCalories - intakeCalories;
+    String nickname = jsonData['nickname'] ?? "아무개";
+    int totalKcal = (jsonData['total_kcal'] ?? 0).toInt();
+    int recKcal = (jsonData['rec_kcal'] ?? 0).toInt();
+    double intakeRatio = totalKcal / recKcal;
+    int remainingCalories = recKcal - totalKcal;
 
-    double carbIntake = 201;
-    double proteinIntake = 80;
-    double fatIntake = 50;
+    int totalCar = (jsonData['total_car'] ?? 0).toInt();
+    int totalProt = (jsonData['total_prot'] ?? 0).toInt();
+    int totalFat = (jsonData['total_fat'] ?? 0).toInt();
 
-    double carbRecommended = 200;
-    double proteinRecommended = 100;
-    double fatRecommended = 70;
+    int recCar = (jsonData['rec_car'] ?? 0).toInt();
+    int recProt = (jsonData['rec_prot'] ?? 0).toInt();
+    int recFat = (jsonData['rec_fat'] ?? 0).toInt();
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 30, left: 25, right: 25),
@@ -337,7 +296,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 text: TextSpan(
                   children: [
                     TextSpan(
-                      text: "$intakeCalories",
+                      text: "$totalKcal",
                       style: const TextStyle(
                         fontFamily: "appname",
                         fontSize: 30,
@@ -354,7 +313,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     TextSpan(
-                      text: "$recommendedCalories kcal",
+                      text: "$recKcal kcal",
                       style: const TextStyle(
                         fontFamily: "myfonts",
                         fontSize: 18,
@@ -368,21 +327,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   Gaps.v44,
                   SizedBox(
-                    // 총 칼로리 원형 그래프 박스
                     height: 200.0,
                     width: 200.0,
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
                         CircularPercentIndicator(
-                          radius: 80.0, // 기존 링의 반지름
+                          radius: 80.0,
                           lineWidth: 13.0,
                           animation: true,
                           animationDuration: 1500,
-                          percent:
-                              intakeRatio > 1 ? 1.0 : intakeRatio, // 100%까지만 표현
+                          percent: intakeRatio > 1 ? 1.0 : intakeRatio,
                           center: SizedBox(
-                            // Text의 크기를 고정하여 위치 변동 방지
                             height: 40.0,
                             child: Center(
                               child: Text(
@@ -399,22 +355,20 @@ class _HomeScreenState extends State<HomeScreen> {
                           circularStrokeCap: CircularStrokeCap.round,
                           backgroundColor:
                               const Color.fromARGB(132, 143, 165, 206),
-                          progressColor:
-                              _getProgressColor(intakeRatio), // 색상 조정
+                          progressColor: _getProgressColor(intakeRatio),
                           backgroundWidth: 8,
                         ),
-                        if (intakeRatio > 1) // 100%가 넘으면 새로운 링을 추가
+                        if (intakeRatio > 1)
                           CircularPercentIndicator(
-                            radius: 100.0, // 외곽 링의 반지름 (기존 링보다 큼)
+                            radius: 100.0,
                             lineWidth: 10.0,
                             animation: true,
                             animationDuration: 1500,
-                            percent:
-                                (intakeRatio - 1).clamp(0, 1), // 100% 초과 부분
+                            percent: (intakeRatio - 1).clamp(0, 1),
                             circularStrokeCap: CircularStrokeCap.round,
-                            backgroundColor: Colors.transparent, // 배경을 투명하게
-                            progressColor: const Color.fromARGB(
-                                255, 255, 61, 87), // 초과 부분의 색상 설정
+                            backgroundColor: Colors.transparent,
+                            progressColor:
+                                const Color.fromARGB(255, 255, 61, 87),
                             backgroundWidth: 5,
                           ),
                       ],
@@ -456,8 +410,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   Gaps.v32,
                   NutritionBar(
                     label: "탄수화물",
-                    intake: carbIntake,
-                    recommended: carbRecommended,
+                    intake: totalCar,
+                    recommended: recCar,
                     gradient: const LinearGradient(
                       colors: [
                         Color.fromARGB(255, 156, 194, 255),
@@ -470,8 +424,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   Gaps.v8,
                   NutritionBar(
                     label: "단백질",
-                    intake: proteinIntake,
-                    recommended: proteinRecommended,
+                    intake: totalProt,
+                    recommended: recProt,
                     gradient: const LinearGradient(
                       colors: [
                         Color.fromARGB(195, 255, 241, 181),
@@ -484,8 +438,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   Gaps.v8,
                   NutritionBar(
                     label: "지방",
-                    intake: fatIntake,
-                    recommended: fatRecommended,
+                    intake: totalFat,
+                    recommended: recFat,
                     gradient: const LinearGradient(
                       colors: [
                         Color.fromARGB(255, 255, 160, 192),
@@ -500,6 +454,63 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildBottomNavigationBar(BuildContext context) {
+    return Container(
+      color: const Color.fromARGB(57, 39, 138, 26),
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          vertical: MediaQuery.of(context).padding.bottom > 0
+              ? Sizes.size8
+              : Sizes.size12,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            NavTab(
+              text: "홈",
+              isSelected: _selectedIndex == 0,
+              icon: FontAwesomeIcons.houseUser,
+              onTap: () => _onTap(0),
+              selectedIcon: FontAwesomeIcons.houseUser,
+            ),
+            Gaps.h48,
+            GestureDetector(
+              onTap: _pickImage,
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color.fromARGB(255, 39, 138, 26),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      spreadRadius: 1,
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: const FaIcon(
+                  size: 30,
+                  FontAwesomeIcons.camera,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            Gaps.h48,
+            NavTab(
+              text: "나의 오늘",
+              isSelected: _selectedIndex == 1,
+              icon: FontAwesomeIcons.utensils,
+              onTap: () => _onTap(1),
+              selectedIcon: FontAwesomeIcons.utensils,
+            ),
+          ],
+        ),
       ),
     );
   }

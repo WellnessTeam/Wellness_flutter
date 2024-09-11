@@ -2,18 +2,62 @@ import 'package:flutter/material.dart';
 import 'package:frontend/constants/sizes.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import 'package:go_router/go_router.dart'; // go_router를 사용하여 라우팅
-import 'package:frontend/features/home/views/widgets/nutrition_bar.dart'; // NutritionBar import
+//import 'dart:convert';
+import 'package:go_router/go_router.dart';
+import 'package:frontend/features/home/views/widgets/nutrition_bar.dart';
+import 'package:frontend/features/home/repos/analyze_repository.dart';
 
-class AnalyzePage extends StatelessWidget {
-  final XFile image; // 업로드된 이미지 파일
+class AnalyzePage extends StatefulWidget {
+  final XFile image;
 
   const AnalyzePage({
     super.key,
     required this.image,
   });
 
-  // 이미지 메타데이터를 읽어 식사 종류를 결정하는 함수
+  @override
+  _AnalyzePageState createState() => _AnalyzePageState();
+}
+
+class _AnalyzePageState extends State<AnalyzePage> {
+  String foodName = "음식명이 없습니다.";
+  int foodKcal = 200;
+  int foodCarb = 10;
+  int foodProt = 10;
+  int foodFat = 50;
+  int recKcal = 2000;
+  int recCarb = 300;
+  int recProt = 50;
+  int recFat = 70;
+
+  final AnalyzeRepository analyzeRepository = AnalyzeRepository();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFoodData();
+  }
+
+  Future<void> _loadFoodData() async {
+    try {
+      final jsonData = await analyzeRepository.fetchAnalyzeData();
+
+      setState(() {
+        foodName = jsonData['food_name'] ?? "음식 정보 없음";
+        foodKcal = (jsonData['food_kcal'] ?? 0).toInt();
+        foodCarb = (jsonData['food_car'] ?? 0).toInt();
+        foodProt = (jsonData['food_prot'] ?? 0).toInt();
+        foodFat = (jsonData['food_fat'] ?? 0).toInt();
+        recKcal = (jsonData['rec_kcal'] ?? 2000).toInt();
+        recCarb = (jsonData['rec_car'] ?? 300).toInt();
+        recProt = (jsonData['rec_prot'] ?? 50).toInt();
+        recFat = (jsonData['rec_fat'] ?? 70).toInt();
+      });
+    } catch (e) {
+      print("API 데이터를 불러오는 중 오류 발생: $e");
+    }
+  }
+
   String determineMealType(DateTime dateTime) {
     final hour = dateTime.hour;
     if (hour >= 6 && hour < 9) {
@@ -29,39 +73,28 @@ class AnalyzePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 이미지 파일이 존재하지 않을 경우의 기본값 처리
     final DateTime now = DateTime.now();
     final String determinedMealType = determineMealType(now);
 
-    // 예제 데이터: 식사 종류, 음식명, 칼로리 및 영양정보
-    const String foodName = "샐러드";
-    const int calories = 250;
-    const double carbs = 20;
-    const double protein = 10;
-    const double fat = 15;
-
-    // 권장 섭취량 예제 데이터
-    const int recommendedCalories = 2000;
-    const double recommendedCarbs = 50.0;
-    const double recommendedProtein = 30.0;
-    const double recommendedFat = 40.0;
-
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          '업로드 한 사진의 분석 결과예요.',
-          style: TextStyle(fontFamily: "myfonts", fontSize: 20),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(50), // AppBar의 높이를 늘립니다
+        child: AppBar(
+          title: const Padding(
+            padding: EdgeInsets.only(top: 30), // Text 위에 20px의 패딩을 추가
+            child: Text(
+              '업로드 한 사진의 분석 결과예요.',
+              style: TextStyle(fontFamily: "myfonts", fontSize: 20),
+            ),
+          ),
+          centerTitle: true,
+          backgroundColor: Colors.white,
         ),
-        centerTitle: true,
-        backgroundColor: Colors.white,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          // mainAxisAlignment: MainAxisAlignment.start,
-          // crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // 설정된 Meal Type 표시
             Text(
               "식사 종류: $determinedMealType",
               style: const TextStyle(
@@ -70,111 +103,81 @@ class AnalyzePage extends StatelessWidget {
                   fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
-            // 업로드된 사진 표시
             Center(
               child: Image.file(
-                File(image.path),
-                width: 300,
+                File(widget.image.path),
+                width: 250,
                 fit: BoxFit.cover,
               ),
             ),
             const SizedBox(height: 20),
-            // 분류된 음식명 및 칼로리 정보
-            const Text(
+            Text(
               "음식명: $foodName",
-              style: TextStyle(fontFamily: "myfonts", fontSize: 18),
+              style: const TextStyle(fontFamily: "myfonts", fontSize: 18),
             ),
             const SizedBox(height: 10),
-            // 칼로리 표시 및 Bar
-            // const Text(
-            //   "칼로리: $calories kcal",
-            //   style: TextStyle(fontFamily: "myfonts", fontSize: 18),
-            // ),
             NutritionBar(
               label: "칼로리",
-              intake: calories.toDouble(),
-              recommended: recommendedCalories.toDouble(),
+              intake: foodKcal,
+              recommended: recKcal,
               gradient: const LinearGradient(
                 colors: [Color(0xFFFFA726), Color(0xFFFF5722)],
                 begin: Alignment.centerLeft,
                 end: Alignment.centerRight,
               ),
             ),
-            // 영양정보 바 추가 (탄수화물, 단백질, 지방)
-            const NutritionBar(
+            NutritionBar(
               label: "탄수화물",
-              intake: carbs,
-              recommended: recommendedCarbs,
-              gradient: LinearGradient(
+              intake: foodCarb,
+              recommended: recCarb,
+              gradient: const LinearGradient(
                 colors: [Color(0xFF90CAF9), Color(0xFF1E88E5)],
                 begin: Alignment.centerLeft,
                 end: Alignment.centerRight,
               ),
             ),
-            const NutritionBar(
+            NutritionBar(
               label: "단백질",
-              intake: protein,
-              recommended: recommendedProtein,
-              gradient: LinearGradient(
+              intake: foodProt,
+              recommended: recProt,
+              gradient: const LinearGradient(
                 colors: [Color(0xFFFFF176), Color(0xFFFFC107)],
                 begin: Alignment.centerLeft,
                 end: Alignment.centerRight,
               ),
             ),
-            const NutritionBar(
+            NutritionBar(
               label: "지방",
-              intake: fat,
-              recommended: recommendedFat,
-              gradient: LinearGradient(
+              intake: foodFat,
+              recommended: recFat,
+              gradient: const LinearGradient(
                 colors: [Color(0xFFF48FB1), Color(0xFFE91E63)],
                 begin: Alignment.centerLeft,
                 end: Alignment.centerRight,
               ),
             ),
             const Spacer(),
-            // 완료 및 취소 버튼
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 ElevatedButton(
                   onPressed: () {
                     showDialog(
-                      // 팝업창 띄우기
                       context: context,
                       builder: (BuildContext context) {
                         return AlertDialog(
-                          title: const Text(
-                            '기록을 취소하실 건가요?',
-                            style: TextStyle(fontFamily: "pretendard-regular"),
-                          ),
-                          content: const Text(
-                            '확인 버튼을 누르면 결과가 기록되지 않아요!',
-                            style: TextStyle(
-                                fontFamily: "pretendart-regular",
-                                fontWeight: FontWeight.w300),
-                          ),
+                          title: const Text('기록을 취소하실 건가요?'),
+                          content: const Text('확인 버튼을 누르면 결과가 기록되지 않아요!'),
                           actions: <Widget>[
                             TextButton(
-                              child: const Text(
-                                '취소',
-                                style: TextStyle(
-                                    fontFamily: "pretendard-regular",
-                                    fontWeight: FontWeight.w300),
-                              ),
+                              child: const Text('취소'),
                               onPressed: () {
-                                // 취소 버튼을 누르면 HomeScreen으로 이동
-                                Navigator.of(context).pop(); // 팝업창 닫기
+                                Navigator.of(context).pop();
                               },
                             ),
                             TextButton(
-                              child: const Text(
-                                '확인',
-                                style: TextStyle(
-                                    fontFamily: "pretendard-regular",
-                                    fontWeight: FontWeight.w300),
-                              ),
+                              child: const Text('확인'),
                               onPressed: () {
-                                // 확인 버튼을 누르면 home 화면으로 이동
                                 context.go('/home/home');
                               },
                             ),
@@ -196,8 +199,19 @@ class AnalyzePage extends StatelessWidget {
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    // 완료 버튼 클릭 시 record 화면으로 이동
-                    context.go('/home/record');
+                    Map<String, dynamic> newRecord = {
+                      'type': determinedMealType,
+                      'food': foodName,
+                      'calories': foodKcal,
+                      'carb': foodCarb,
+                      'protein': foodProt,
+                      'fat': foodFat,
+                      'time': DateTime.now().toIso8601String(),
+                    };
+
+                    print('전달될 기록 데이터: $newRecord');
+
+                    context.go('/home/record', extra: newRecord);
                   },
                   style: ElevatedButton.styleFrom(
                       backgroundColor: const Color.fromARGB(57, 39, 138, 26)),

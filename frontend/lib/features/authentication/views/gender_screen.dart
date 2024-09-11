@@ -28,6 +28,9 @@ class _GenderScreenState extends ConsumerState<GenderScreen> {
       "gender": _selectedGender,
     };
 
+    // 현재 signUpForm 상태를 출력하여 확인
+    print("SignUp Form Data: ${ref.read(signUpForm)}");
+
     context.goNamed(HeightScreen.routeName);
   }
 
@@ -41,22 +44,29 @@ class _GenderScreenState extends ConsumerState<GenderScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Padding(
-          padding: EdgeInsets.only(top: 10.0, bottom: 10.0),
-          child: Text(
-            "필수 정보 입력",
-            style: TextStyle(
-              fontSize: 20,
-              fontFamily: "pretendard-regular",
-              fontWeight: FontWeight.w600,
-            ),
+        title: Padding(
+          padding: const EdgeInsets.only(top: 20.0), // 상단에 20px 패딩 추가
+          child: Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () {
+                  context.goNamed("birthday");
+                },
+              ),
+              const Padding(
+                padding: EdgeInsets.only(left: 8.0), // 아이콘과 텍스트 사이의 간격
+                child: Text(
+                  "필수 정보 입력",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontFamily: "pretendard-regular",
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            context.goNamed("birthday");
-          },
         ),
         backgroundColor: Colors.white,
       ),
@@ -84,7 +94,6 @@ class _GenderScreenState extends ConsumerState<GenderScreen> {
                 fontWeight: FontWeight.w600,
               ),
             ),
-
             Gaps.v16,
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
