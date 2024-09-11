@@ -54,6 +54,8 @@ dependencies:
   image_picker: ^1.1.2
   permission_handler: ^11.3.1
   percent_indicator: ^4.2.3
+  path_provider: ^2.0.11
+
 
 dev_dependencies:
   flutter_test:
@@ -80,6 +82,7 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - lib/l10n/
+    - assets/images/kakao_login_medium_wide.png
     - assets/images/wellness.png
     - assets/images/new_rabbit.png
     - assets/images/breakfast.png
@@ -95,6 +98,9 @@ flutter:
     - assets/images/food_icons/spaghetti.png
     - assets/images/food_icons/steak.png
     - assets/images/food_icons/tteokbokki.png
+    # - assets/data/sample.json
+    # - assets/data/data_for_record.json
+    # - assets/data/data_for_analyze.json
 
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg

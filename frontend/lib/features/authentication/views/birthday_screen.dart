@@ -36,12 +36,33 @@ class _BirthdayScreenState extends ConsumerState<BirthdayScreen> {
   }
 
   void _onNextTap() {
+    // 나이 계산
+    final int age = _calculateAge(initialDate);
+
+    // 상태에 생년월일과 나이를 저장
     final state = ref.read(signUpForm.notifier).state;
     ref.read(signUpForm.notifier).state = {
       ...state,
       "birthday": _birthdayController.text,
+      "age": age, // 계산된 나이를 저장
     };
+
+    print("SignUp Form Data: ${ref.read(signUpForm)}");
     context.goNamed(GenderScreen.routeName);
+  }
+
+  // 나이 계산 함수
+  int _calculateAge(DateTime birthday) {
+    DateTime today = DateTime.now();
+    int age = today.year - birthday.year;
+
+    // 생일이 올해 지났는지 확인해서 아직 안 지났으면 1살 줄임
+    if (today.month < birthday.month ||
+        (today.month == birthday.month && today.day <= birthday.day)) {
+      age--;
+    }
+
+    return age;
   }
 
   void _setTextFieldDate(DateTime date) {
@@ -70,7 +91,7 @@ class _BirthdayScreenState extends ConsumerState<BirthdayScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Padding(
-          padding: EdgeInsets.only(left: 22.0, top: 10.0),
+          padding: EdgeInsets.only(left: 22.0, top: 20.0),
           child: Text(
             "필수 정보 입력",
             style: TextStyle(

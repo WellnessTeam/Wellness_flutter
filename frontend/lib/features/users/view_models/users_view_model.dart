@@ -38,9 +38,9 @@ class UsersViewModel extends AsyncNotifier<UserProfileModel> {
 
     // 상태를 업데이트한 후 더미 리포지토리에 반영
     state = AsyncValue.data(state.value!.copyWith(
-      bio: updates['bio'] ?? state.value!.bio,
-      link: updates['link'] ?? state.value!.link,
-      sex: updates['sex'] ?? state.value!.sex,
+      // bio: updates['bio'] ?? state.value!.bio,
+      // link: updates['link'] ?? state.value!.link,
+      gender: updates['gender'] ?? state.value!.gender,
       height: updates['height']?.toDouble() ?? state.value!.height,
       weight: updates['weight']?.toDouble() ?? state.value!.weight,
     ));
