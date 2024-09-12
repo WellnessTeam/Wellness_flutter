@@ -8,6 +8,7 @@ import 'package:frontend/features/authentication/views/widgets/form_button.dart'
 import 'package:frontend/features/authentication/views/widgets/status_bar.dart';
 import 'package:frontend/features/home/views/home_screen.dart';
 import 'package:go_router/go_router.dart';
+import 'package:logger/logger.dart';
 
 class WeightScreen extends ConsumerStatefulWidget {
   static String routeName = "weight";
@@ -64,12 +65,15 @@ class _WeightScreenState extends ConsumerState<WeightScreen> {
 
   void _onNextTap() {
     final weight = "${_integerController.text}.${_decimalController.text}";
+    var logger = Logger();
+
     ref.read(signUpForm.notifier).state = {
       ...ref.read(signUpForm.notifier).state,
       "weight": weight,
     };
 
-    print("SignUp Form Data: ${ref.read(signUpForm)}");
+    logger.i('${ref.read(signUpForm)}');
+    // print("SignUp Form Data: ${ref.read(signUpForm)}");
 
     // 'home' 탭으로 이동하도록 설정
     context.goNamed(

@@ -1,22 +1,87 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/constants/sizes.dart';
 import 'package:frontend/constants/gaps.dart';
-//import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:frontend/features/authentication/view_models/login_platform.dart';
+import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart';
+import 'package:http/http.dart' as http;
+import 'package:logger/logger.dart'; // logger 패키지 추가
 
-class LoginScreen extends ConsumerWidget {
+class LoginScreen extends StatefulWidget {
   static String routeName = "login";
   static String routeURL = "/";
 
   const LoginScreen({super.key});
 
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final Logger _logger = Logger(); // logger 인스턴스 생성
+  LoginPlatform _loginPlatform = LoginPlatform.none;
+
+  // 카카오 로그인 로직
+  void signInWithKakao() async {
+    try {
+      bool isInstalled = await isKakaoTalkInstalled();
+
+      OAuthToken token = isInstalled
+          ? await UserApi.instance.loginWithKakaoTalk()
+          : await UserApi.instance.loginWithKakaoAccount();
+
+      final url = Uri.https('kapi.kakao.com', '/v2/user/me');
+
+      final response = await http.get(
+        url,
+        headers: {
+          HttpHeaders.authorizationHeader: 'Bearer ${token.accessToken}'
+        },
+      );
+
+      final profileInfo = json.decode(response.body);
+      _logger.i('프로필 정보: ${profileInfo.toString()}'); // 정보 로깅
+
+      setState(() {
+        _loginPlatform = LoginPlatform.kakao;
+      });
+
+      // 유저 정보 가져오기
+      User user = await UserApi.instance.me();
+      _logger.i('사용자 정보 요청 성공'
+          '\n회원번호: ${user.id}'
+          '\n닉네임: ${user.kakaoAccount?.profile?.nickname}'
+          '\n이메일: ${user.kakaoAccount?.email}');
+    } catch (error) {
+      _logger.e('카카오톡으로 로그인 실패', error: error);
+    }
+  }
+
+  // 로그아웃
+  void signOut() async {
+    switch (_loginPlatform) {
+      case LoginPlatform.kakao:
+        await UserApi.instance.logout();
+        break;
+      case LoginPlatform.none:
+        break;
+    }
+
+    setState(() {
+      _loginPlatform = LoginPlatform.none;
+    });
+  }
+
+  // 버튼 클릭 시 카카오 로그인 함수 호출
   void _onKakaoLoginTap(BuildContext context) {
-    context.goNamed('birthday');
+    signInWithKakao();
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -29,12 +94,12 @@ class LoginScreen extends ConsumerWidget {
                 child: Column(
                   children: [
                     Image.asset(
-                      'assets/images/new_rabbit.png', // 여기에 로고 이미지 경로를 입력하세요
-                      height: 300, // 이미지 높이를 조정하세요
+                      'assets/images/new_rabbit.png', // 로고 이미지 경로
+                      height: 300,
                     ),
-                    Gaps.v10, // 이미지와 앱 이름 사이에 간격을 추가
+                    Gaps.v10,
                     const Text(
-                      "WELLNESS", // 여기에 앱 이름을 입력하세요
+                      "WELLNESS",
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontFamily: "appname",
@@ -60,7 +125,6 @@ class LoginScreen extends ConsumerWidget {
                           fontFamily: "pretendard-regular",
                           fontSize: Sizes.size18,
                           fontWeight: FontWeight.w600,
-                          //fontStyle: FontStyle.italic,
                         ),
                       ),
                     ),
@@ -73,7 +137,6 @@ class LoginScreen extends ConsumerWidget {
                           fontFamily: "pretendard-regular",
                           fontSize: Sizes.size18,
                           fontWeight: FontWeight.w600,
-                          //fontStyle: FontStyle.italic,
                         ),
                       ),
                     ),
@@ -125,12 +188,12 @@ class _KakaoLoginButtonState extends State<_KakaoLoginButton> {
             width: double.infinity,
             padding: const EdgeInsets.all(Sizes.size14),
             decoration: BoxDecoration(
-              color: Colors.transparent, // No background needed for an image
+              color: Colors.transparent,
               borderRadius: BorderRadius.circular(12.0),
             ),
             child: Image.asset(
-              'assets/images/kakao_login_medium_wide.png', // Use the uploaded image
-              fit: BoxFit.contain, // Adjust the image to fit the container
+              'assets/images/kakao_login_medium_wide.png',
+              fit: BoxFit.contain,
             ),
           ),
         ),

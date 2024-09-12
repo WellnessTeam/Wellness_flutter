@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class NutritionBar extends StatelessWidget {
+class NutritionBar extends StatefulWidget {
   final String label; // 영양소 이름
   final int intake; // 섭취량
   final int recommended; // 권장 섭취량
@@ -15,9 +15,41 @@ class NutritionBar extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    double percentage = intake / recommended;
+  _NutritionBarState createState() => _NutritionBarState();
+}
 
+class _NutritionBarState extends State<NutritionBar>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    double percentage = widget.intake / widget.recommended;
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 1),
+    );
+
+    _animation = Tween<double>(begin: 0, end: percentage).animate(_controller)
+      ..addListener(() {
+        setState(() {});
+      });
+
+    // 애니메이션 시작
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
       child: Column(
@@ -28,17 +60,17 @@ class NutritionBar extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                label,
+                widget.label,
                 style: const TextStyle(
-                    fontFamily: "myfonts",
+                    fontFamily: "pretendart-regular",
                     fontSize: 16,
                     fontWeight: FontWeight.bold),
               ),
               // 섭취 / 권장 (비율%) 텍스트 표시
               Text(
-                "${intake.toStringAsFixed(0)} / ${recommended.toStringAsFixed(0)} (${(percentage * 100).toStringAsFixed(0)}%)",
+                "${widget.intake.toStringAsFixed(0)} / ${widget.recommended.toStringAsFixed(0)} (${(_animation.value * 100).toStringAsFixed(0)}%)",
                 style: const TextStyle(
-                  fontFamily: "myfonts",
+                  fontFamily: "pretendart-regular",
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: Color.fromARGB(255, 0, 0, 0),
@@ -61,11 +93,11 @@ class NutritionBar extends StatelessWidget {
                     ),
                   ),
                   Container(
-                    width:
-                        percentage * constraints.maxWidth, // 부모 위젯 너비에 비례하여 설정
+                    width: _animation.value *
+                        constraints.maxWidth, // 애니메이션 값에 비례하여 설정
                     height: 15, // 바 높이
                     decoration: BoxDecoration(
-                      gradient: gradient, // 그라데이션 적용
+                      gradient: widget.gradient, // 그라데이션 적용
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),

@@ -20,11 +20,11 @@ class AnalyzePage extends StatefulWidget {
 }
 
 class _AnalyzePageState extends State<AnalyzePage> {
-  String foodName = "음식명이 없습니다.";
-  int foodKcal = 200;
-  int foodCarb = 10;
-  int foodProt = 10;
-  int foodFat = 50;
+  String foodName = "짬뽕";
+  int foodKcal = 300;
+  int foodCarb = 50;
+  int foodProt = 20;
+  int foodFat = 35;
   int recKcal = 2000;
   int recCarb = 300;
   int recProt = 50;
@@ -54,7 +54,7 @@ class _AnalyzePageState extends State<AnalyzePage> {
         recFat = (jsonData['rec_fat'] ?? 70).toInt();
       });
     } catch (e) {
-      print("API 데이터를 불러오는 중 오류 발생: $e");
+      print("API 데이터를 불러오는 중 오류 발생(analyze): $e");
     }
   }
 
