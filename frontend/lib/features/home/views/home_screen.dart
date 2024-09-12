@@ -11,6 +11,7 @@ import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'record_screen.dart';
 import 'package:frontend/features/home/repos/nutrition_repository.dart'; // 리포지토리 추가
 import 'package:flutter/services.dart';
+import 'package:logger/logger.dart';
 
 class HomeScreen extends StatefulWidget {
   static const String routeName = "home";
@@ -31,7 +32,7 @@ class _HomeScreenState extends State<HomeScreen> {
   double intakeRatio = 0.0;
   final List<String> tabs = ["home", "record"];
   Map<String, dynamic> jsonData = {
-    'nickname': '아무개', // 기본 닉네임
+    'nickname': '이름', // 기본 닉네임
     'total_kcal': 0, // 기본 섭취 칼로리
     'rec_kcal': 2000, // 기본 권장 칼로리
     'total_car': 0, // 기본 탄수화물 섭취
@@ -40,7 +41,8 @@ class _HomeScreenState extends State<HomeScreen> {
     'rec_car': 300, // 기본 탄수화물 권장량
     'rec_prot': 50, // 기본 단백질 권장량
     'rec_fat': 70, // 기본 지방 권장량
-  }; // 기본값을 설정
+  }; // 기본값 설정
+
   final NutritionRepository nutritionRepository =
       NutritionRepository(); // API 리포지토리
 
@@ -48,6 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLatestFirst = true; // 정렬 상태
   late int _selectedIndex;
   bool _isRequestingPermission = false;
+  var logger = Logger();
 
   @override
   void initState() {
@@ -65,18 +68,32 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  // API에서 데이터를 받아오는 함수
+  // API에서 데이터 받기
   Future<void> _loadNutritionData() async {
     try {
-      final data = await nutritionRepository.fetchNutritionData();
+      final response = await nutritionRepository.fetchNutritionData();
+      // 응답에서 필요한 데이터 파싱
+
+      final detail = response['detail']['wellness_recommend_info'];
+      logger.i('++++++++++++++++++in 0++++++++++++++++++');
+
       if (mounted) {
         setState(() {
-          jsonData = data; // API에서 받은 데이터를 저장
+          jsonData = {
+            'total_kcal': detail['total_kcal'] ?? 0, // 섭취 칼로리
+            'total_car': detail['total_car'] ?? 0, // 섭취 탄수화물
+            'total_prot': detail['total_prot'] ?? 0, // 섭취 단백질
+            'total_fat': detail['total_fat'] ?? 0, // 섭취 지방
+            'rec_kcal': detail['rec_kcal'] ?? 2000, // 권장 칼로리
+            'rec_car': detail['rec_car'] ?? 300, // 권장 탄수화물
+            'rec_prot': detail['rec_prot'] ?? 50, // 권장 단백질
+            'rec_fat': detail['rec_fat'] ?? 70, // 권장 지방
+          };
           _isLoading = false; // 데이터를 성공적으로 받으면 로딩 해제
         });
       }
     } catch (e) {
-      debugPrint("데이터를 불러오는 중 오류 발생: $e");
+      debugPrint("데이터를 불러오는 중 오류 발생(home_screen): $e");
       // 오류가 발생하면 기본값을 그대로 사용
       if (mounted) {
         setState(() {
@@ -86,6 +103,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  //progress bar 색상설정
   Color _getProgressColor(double intakeRatio) {
     if (intakeRatio < 0.5) {
       return const Color.fromARGB(255, 255, 179, 80); // 50% 이하일 때 초록색
@@ -109,6 +127,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  // 이미지 선택 권한
   Future<void> _pickImage() async {
     if (_isRequestingPermission) return;
 
@@ -154,10 +173,16 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  // tab이 눌릴 떄 마다 데이터 받기
   void _onTap(int index) {
     setState(() {
       _selectedIndex = index;
     });
+
+    // 홈 탭(인덱스 0)이 선택될 때마다 데이터를 다시 불러옴
+    if (index == 0) {
+      _loadNutritionData(); // 홈 탭이 선택될 때마다 데이터를 새로 받아옴
+    }
 
     String selectedTab = tabs[index];
     context.go('/home/$selectedTab');
@@ -168,19 +193,71 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: _buildAppBar(), // AppBar를 동적으로 설정
       resizeToAvoidBottomInset: false,
-      body: Container(
-        color: const Color.fromARGB(32, 255, 231, 231), // background color
-        child: IndexedStack(
-          index: _selectedIndex,
-          children: [
-            _isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(), // 로딩 중일 때 로딩 애니메이션 표시
-                  )
-                : _buildHomeScreen(context), // 로딩이 완료되면 홈 화면 표시
-            RecordScreen(isLatestFirst: _isLatestFirst),
-          ],
-        ),
+      body: Column(
+        children: [
+          // 기록 화면일 때만 ToggleButtons 표시
+          if (_selectedIndex == 1)
+            Padding(
+              padding: const EdgeInsets.all(0),
+              child: ToggleButtons(
+                constraints: const BoxConstraints(
+                  minHeight: 30.0, // 적절한 높이 설정
+                  minWidth: 70.0, // 버튼의 너비도 설정
+                ),
+                isSelected: [_isLatestFirst, !_isLatestFirst], // 선택 상태
+                onPressed: (index) {
+                  setState(() {
+                    // 누른 버튼의 상태를 반대로 변경
+                    _isLatestFirst = index == 0;
+                  });
+                },
+                color: Colors.black,
+                selectedColor: const Color.fromARGB(255, 0, 0, 0), // 선택된 텍스트 색상
+                fillColor:
+                    const Color.fromARGB(255, 232, 245, 233), // 선택된 버튼의 배경색
+                borderRadius: BorderRadius.circular(10),
+                borderColor: Colors.black,
+                selectedBorderColor: Colors.black, // 선택된 버튼의 테두리 색상
+                borderWidth: 1.2,
+                children: const [
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    child: Text('최신순',
+                        style: TextStyle(
+                          fontFamily: "pretendard-regular",
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        )),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    child: Text('과거순',
+                        style: TextStyle(
+                          fontFamily: "pretendard-regular",
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        )),
+                  ),
+                ],
+              ),
+            ),
+
+          // 화면 내용 표시
+          Expanded(
+            child: IndexedStack(
+              index: _selectedIndex,
+              children: [
+                _isLoading
+                    ? const Center(
+                        child:
+                            CircularProgressIndicator(), // 로딩 중일 때 로딩 애니메이션 표시
+                      )
+                    : _buildHomeScreen(context), // 로딩이 완료되면 홈 화면 표시
+                RecordScreen(isLatestFirst: _isLatestFirst),
+              ],
+            ),
+          ),
+        ],
       ),
       bottomNavigationBar: _buildBottomNavigationBar(context),
     );
@@ -210,53 +287,13 @@ class _HomeScreenState extends State<HomeScreen> {
             statusBarColor: Colors.white, // 상태바 배경색 고정
             statusBarIconBrightness: Brightness.dark, // 상태바 아이콘 색상 고정
           ),
-          actions: _selectedIndex == 1
-              ? [
-                  Padding(
-                    padding: const EdgeInsets.all(10.0),
-                    child: ToggleButtons(
-                      isSelected: [_isLatestFirst, !_isLatestFirst],
-                      onPressed: (index) {
-                        setState(() {
-                          _isLatestFirst = index == 0;
-                        });
-                      },
-                      color: Colors.black,
-                      selectedColor: const Color.fromARGB(255, 0, 0, 0),
-                      fillColor: const Color.fromARGB(255, 211, 235, 255),
-                      borderRadius: BorderRadius.circular(10),
-                      borderColor: Colors.black,
-                      selectedBorderColor: const Color.fromARGB(255, 0, 0, 0),
-                      borderWidth: 1.2,
-                      children: const [
-                        Padding(
-                          padding:
-                              EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                          child: Text('최신순',
-                              style: TextStyle(
-                                  fontFamily: "pretendard-regular",
-                                  fontSize: 16)),
-                        ),
-                        Padding(
-                          padding:
-                              EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                          child: Text('과거순',
-                              style: TextStyle(
-                                  fontFamily: "pretendard-regular",
-                                  fontSize: 16)),
-                        ),
-                      ],
-                    ),
-                  ),
-                ]
-              : null,
         ),
       ),
     );
   }
 
   Widget _buildHomeScreen(BuildContext context) {
-    String nickname = jsonData['nickname'] ?? "아무개";
+    String nickname = jsonData['nickname'] ?? "이름";
     int totalKcal = (jsonData['total_kcal'] ?? 0).toInt();
     int recKcal = (jsonData['rec_kcal'] ?? 0).toInt();
     double intakeRatio = totalKcal / recKcal;
@@ -361,7 +398,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         if (intakeRatio > 1)
                           CircularPercentIndicator(
                             radius: 100.0,
-                            lineWidth: 10.0,
+                            lineWidth: 13.0,
                             animation: true,
                             animationDuration: 1500,
                             percent: (intakeRatio - 1).clamp(0, 1),

@@ -7,6 +7,7 @@ import 'package:frontend/features/authentication/views/widgets/form_button.dart'
 import 'package:frontend/features/authentication/views/height_screen.dart';
 import 'package:frontend/features/authentication/views/widgets/status_bar.dart';
 import 'package:go_router/go_router.dart';
+import 'package:logger/logger.dart';
 
 class GenderScreen extends ConsumerStatefulWidget {
   static String routeName = "gender";
@@ -20,6 +21,7 @@ class GenderScreen extends ConsumerStatefulWidget {
 
 class _GenderScreenState extends ConsumerState<GenderScreen> {
   String _selectedGender = "없음";
+  var logger = Logger();
 
   void _onNextTap() {
     final state = ref.read(signUpForm.notifier).state;
@@ -29,7 +31,8 @@ class _GenderScreenState extends ConsumerState<GenderScreen> {
     };
 
     // 현재 signUpForm 상태를 출력하여 확인
-    print("SignUp Form Data: ${ref.read(signUpForm)}");
+    //print("SignUp Form Data: ${ref.read(signUpForm)}");
+    logger.i('${ref.read(signUpForm)}');
 
     context.goNamed(HeightScreen.routeName);
   }

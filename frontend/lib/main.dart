@@ -11,9 +11,11 @@ import 'package:go_router/go_router.dart';
 import 'package:frontend/features/home/views/analyze_page.dart';
 import 'package:frontend/features/home/views/record_screen.dart';
 import 'package:image_picker/image_picker.dart'; // AnalyzePage import
-import 'package:flutter/services.dart'; // SystemChrome import
+import 'package:flutter/services.dart';
+import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart'; // SystemChrome import
+// import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized(); // 플러그인 초기화
 
   // 상태바 스타일 설정
@@ -21,6 +23,15 @@ void main() {
     statusBarColor: Colors.transparent, // 투명한 상태바 설정
     statusBarIconBrightness: Brightness.dark, // 상태바 아이콘을 어두운 색으로 설정
   ));
+
+  // await dotenv.load(fileName: '.env');
+
+  KakaoSdk.init(
+    nativeAppKey: 'MY NATIVE APP KEY',
+    javaScriptAppKey: 'MY JAVA SCRIPT APP KEY',
+  );
+
+  // print(await KakaoSdk.origin);
 
   runApp(
     const ProviderScope(

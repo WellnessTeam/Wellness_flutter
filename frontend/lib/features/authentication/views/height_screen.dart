@@ -8,6 +8,7 @@ import 'package:frontend/features/authentication/views/widgets/form_button.dart'
 import 'package:frontend/features/authentication/views/weight_screen.dart';
 import 'package:frontend/features/authentication/views/widgets/status_bar.dart';
 import 'package:go_router/go_router.dart';
+import 'package:logger/logger.dart';
 
 class HeightScreen extends ConsumerStatefulWidget {
   static String routeName = "height";
@@ -64,12 +65,15 @@ class _HeightScreenState extends ConsumerState<HeightScreen> {
 
   void _onNextTap() {
     final height = "${_integerController.text}.${_decimalController.text}";
+    var logger = Logger();
+
     ref.read(signUpForm.notifier).state = {
       ...ref.read(signUpForm.notifier).state,
       "height": height,
     };
 
-    print("SignUp Form Data: ${ref.read(signUpForm)}");
+    logger.i('${ref.read(signUpForm)}');
+    //print("SignUp Form Data: ${ref.read(signUpForm)}");
 
     context.goNamed(WeightScreen.routeName);
   }

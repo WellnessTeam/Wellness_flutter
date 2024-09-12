@@ -7,6 +7,7 @@ import 'package:frontend/features/authentication/views/gender_screen.dart';
 import 'package:frontend/features/authentication/views/widgets/form_button.dart';
 import 'package:frontend/features/authentication/views/widgets/status_bar.dart';
 import 'package:go_router/go_router.dart';
+import 'package:logger/logger.dart';
 
 class BirthdayScreen extends ConsumerStatefulWidget {
   static String routeName = "birthday";
@@ -38,6 +39,7 @@ class _BirthdayScreenState extends ConsumerState<BirthdayScreen> {
   void _onNextTap() {
     // 나이 계산
     final int age = _calculateAge(initialDate);
+    var logger = Logger();
 
     // 상태에 생년월일과 나이를 저장
     final state = ref.read(signUpForm.notifier).state;
@@ -47,7 +49,9 @@ class _BirthdayScreenState extends ConsumerState<BirthdayScreen> {
       "age": age, // 계산된 나이를 저장
     };
 
-    print("SignUp Form Data: ${ref.read(signUpForm)}");
+    logger.i('${ref.read(signUpForm)}');
+
+    // print("SignUp Form Data: ${ref.read(signUpForm)}");
     context.goNamed(GenderScreen.routeName);
   }
 
@@ -58,7 +62,7 @@ class _BirthdayScreenState extends ConsumerState<BirthdayScreen> {
 
     // 생일이 올해 지났는지 확인해서 아직 안 지났으면 1살 줄임
     if (today.month < birthday.month ||
-        (today.month == birthday.month && today.day <= birthday.day)) {
+        (today.month == birthday.month && today.day < birthday.day)) {
       age--;
     }
 
