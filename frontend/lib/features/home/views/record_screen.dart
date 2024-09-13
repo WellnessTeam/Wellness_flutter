@@ -192,7 +192,7 @@ class _RecordScreenState extends State<RecordScreen> {
             )
           : const Center(
               child: Text(
-              '기록된 데이터가 없습니다.',
+              '오늘의 기록을 추가해보세요!',
               style: TextStyle(fontFamily: "pretendard-regular", fontSize: 18),
             )),
     );
