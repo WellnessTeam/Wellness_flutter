@@ -15,7 +15,7 @@ import 'package:flutter/services.dart';
 import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart'; // SystemChrome import
 // import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-Future<void> main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized(); // 플러그인 초기화
 
   // 상태바 스타일 설정
@@ -27,11 +27,8 @@ Future<void> main() async {
   // await dotenv.load(fileName: '.env');
 
   KakaoSdk.init(
-    nativeAppKey: 'MY NATIVE APP KEY',
-    javaScriptAppKey: 'MY JAVA SCRIPT APP KEY',
+    nativeAppKey: 'KAKAO_NATIVE_APP_KEY',
   );
-
-  // print(await KakaoSdk.origin);
 
   runApp(
     const ProviderScope(

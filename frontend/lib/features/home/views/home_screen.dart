@@ -152,7 +152,7 @@ class _HomeScreenState extends State<HomeScreen> {
               await picker.pickImage(source: ImageSource.gallery);
 
           if (image != null && mounted) {
-            context.go('/analyze', extra: image);
+            context.go('/analyze', extra: image); //api로 가도록 수정
           }
         } else if (status.isDenied || status.isPermanentlyDenied) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -424,7 +424,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         TextSpan(
                           text: remainingCalories > 0
                               ? "$remainingCalories kcal"
-                              : "권장량을 모두 채웠어요!",
+                              : "너무 많이 먹는 건 건강에 좋지 않아요🥲",
                           style: TextStyle(
                             fontFamily: "myfonts",
                             color: remainingCalories > 0

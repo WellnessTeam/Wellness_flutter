@@ -1,14 +1,12 @@
-import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 import 'package:frontend/constants/sizes.dart';
 import 'package:frontend/constants/gaps.dart';
-import 'package:go_router/go_router.dart';
 import 'package:frontend/features/authentication/view_models/login_platform.dart';
+import 'package:frontend/features/authentication/views/birthday_screen.dart';
 import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart';
-import 'package:http/http.dart' as http;
-import 'package:logger/logger.dart'; // logger 패키지 추가
+import 'package:logger/logger.dart';
+import 'package:go_router/go_router.dart'; // GoRouter 패키지 추가
 
 class LoginScreen extends StatefulWidget {
   static String routeName = "login";
@@ -21,42 +19,93 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final Logger _logger = Logger(); // logger 인스턴스 생성
+  final Logger _logger = Logger();
   LoginPlatform _loginPlatform = LoginPlatform.none;
 
   // 카카오 로그인 로직
   void signInWithKakao() async {
-    try {
-      bool isInstalled = await isKakaoTalkInstalled();
+    _logger.d("카카오 로그인 시도");
+    // _logger.i(await KakaoSdk.origin); //hash key 출력코드
 
-      OAuthToken token = isInstalled
-          ? await UserApi.instance.loginWithKakaoTalk()
-          : await UserApi.instance.loginWithKakaoAccount();
+    if (await isKakaoTalkInstalled()) {
+      try {
+        await UserApi.instance.loginWithKakaoTalk();
+        _logger.i('카카오톡으로 로그인 성공');
+        setState(() {
+          _loginPlatform = LoginPlatform.kakao;
+        });
 
-      final url = Uri.https('kapi.kakao.com', '/v2/user/me');
+        // 로그인 성공 후 사용자 정보 가져오기
+        User user = await UserApi.instance.me();
+        String? nickname = user.kakaoAccount?.profile?.nickname;
+        String? email = user.kakaoAccount?.email;
 
-      final response = await http.get(
-        url,
-        headers: {
-          HttpHeaders.authorizationHeader: 'Bearer ${token.accessToken}'
-        },
-      );
+        _logger.i('사용자 정보: 닉네임 - $nickname, 이메일 - $email');
 
-      final profileInfo = json.decode(response.body);
-      _logger.i('프로필 정보: ${profileInfo.toString()}'); // 정보 로깅
+        // GoRouter를 사용하여 BirthdayScreen으로 이동
+        context.goNamed(
+          BirthdayScreen.routeName,
+          extra: {
+            'nickname': nickname,
+            'email': email,
+          },
+        );
+      } catch (error) {
+        _logger.e('카카오톡으로 로그인 실패: $error');
 
-      setState(() {
-        _loginPlatform = LoginPlatform.kakao;
-      });
+        if (error is PlatformException && error.code == 'CANCELED') {
+          _logger.w('사용자가 로그인 취소');
+          return;
+        }
 
-      // 유저 정보 가져오기
-      User user = await UserApi.instance.me();
-      _logger.i('사용자 정보 요청 성공'
-          '\n회원번호: ${user.id}'
-          '\n닉네임: ${user.kakaoAccount?.profile?.nickname}'
-          '\n이메일: ${user.kakaoAccount?.email}');
-    } catch (error) {
-      _logger.e('카카오톡으로 로그인 실패', error: error);
+        try {
+          await UserApi.instance.loginWithKakaoAccount();
+          _logger.i('카카오계정으로 로그인 성공');
+          setState(() {
+            _loginPlatform = LoginPlatform.kakao;
+          });
+
+          User user = await UserApi.instance.me();
+          String? nickname = user.kakaoAccount?.profile?.nickname;
+          String? email = user.kakaoAccount?.email;
+
+          _logger.i('사용자 정보: 닉네임 - $nickname, 이메일 - $email');
+
+          context.goNamed(
+            BirthdayScreen.routeName,
+            extra: {
+              'nickname': nickname,
+              'email': email,
+            },
+          );
+        } catch (error) {
+          _logger.e('카카오계정으로 로그인 실패: $error');
+        }
+      }
+    } else {
+      try {
+        await UserApi.instance.loginWithKakaoAccount();
+        _logger.i('카카오계정으로 로그인 성공');
+        setState(() {
+          _loginPlatform = LoginPlatform.kakao;
+        });
+
+        User user = await UserApi.instance.me();
+        String? nickname = user.kakaoAccount?.profile?.nickname;
+        String? email = user.kakaoAccount?.email;
+
+        _logger.i('사용자 정보: 닉네임 - $nickname, 이메일 - $email');
+
+        context.goNamed(
+          BirthdayScreen.routeName,
+          extra: {
+            'nickname': nickname,
+            'email': email,
+          },
+        );
+      } catch (error) {
+        _logger.e('카카오계정으로 로그인 실패: $error');
+      }
     }
   }
 
@@ -65,6 +114,7 @@ class _LoginScreenState extends State<LoginScreen> {
     switch (_loginPlatform) {
       case LoginPlatform.kakao:
         await UserApi.instance.logout();
+        _logger.i('카카오 로그아웃 성공');
         break;
       case LoginPlatform.none:
         break;
@@ -75,7 +125,6 @@ class _LoginScreenState extends State<LoginScreen> {
     });
   }
 
-  // 버튼 클릭 시 카카오 로그인 함수 호출
   void _onKakaoLoginTap(BuildContext context) {
     signInWithKakao();
   }
@@ -113,7 +162,6 @@ class _LoginScreenState extends State<LoginScreen> {
               Gaps.v20,
               Gaps.v20,
               const Center(
-                // 이 부분을 추가하여 텍스트를 중앙 정렬
                 child: Column(
                   children: [
                     Opacity(

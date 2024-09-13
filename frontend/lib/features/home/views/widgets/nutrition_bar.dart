@@ -30,7 +30,7 @@ class _NutritionBarState extends State<NutritionBar>
 
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 1),
+      duration: const Duration(seconds: 1, microseconds: 30),
     );
 
     _animation = Tween<double>(begin: 0, end: percentage).animate(_controller)
