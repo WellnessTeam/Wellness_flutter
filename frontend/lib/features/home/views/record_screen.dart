@@ -3,6 +3,9 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:frontend/constants/sizes.dart';
 import 'package:logger/logger.dart';
+import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart'; // 카카오 SDK 추가
+import 'package:frontend/features/authentication/views/login_screen.dart'; // 로그인 화면 경로 추가
+import 'package:shared_preferences/shared_preferences.dart'; // SharedPreferences 추가
 
 class RecordScreen extends StatefulWidget {
   final bool isLatestFirst;
@@ -31,18 +34,13 @@ class _RecordScreenState extends State<RecordScreen> {
 
     if (newRecord != null && !_isDuplicateRecord(newRecord)) {
       logger.i('전달된 기록 데이터: $newRecord');
-      // print('전달된 기록 데이터: $newRecord');
       _addNewRecord(newRecord);
     }
   }
 
   bool _isDuplicateRecord(Map<String, dynamic> newRecord) {
-    // 전달받은 newRecord의 'time' 값을 DateTime으로 변환
     DateTime newRecordTime = DateTime.parse(newRecord['time']);
-
-    // 기존 기록과 중복된 기록이 있는지 확인
     return meals.any((meal) {
-      // meal['time']을 String에서 DateTime으로 변환해서 비교
       DateTime mealTime = DateTime.parse(meal['time']);
       return mealTime.isAtSameMomentAs(newRecordTime);
     });
@@ -50,32 +48,19 @@ class _RecordScreenState extends State<RecordScreen> {
 
   void _addNewRecord(Map<String, dynamic> newRecord) {
     setState(() {
-      // 전달받은 newRecord의 'time' 값을 DateTime으로 변환
       DateTime newRecordTime = DateTime.parse(newRecord['time']);
-
-      // 기존 기록과 중복된 기록이 있는지 확인 (중복 기록 방지)
       final isDuplicate = meals.any((meal) {
-        if (meal['time'] is String) {
-          // meals의 time이 String일 경우 DateTime으로 변환해서 비교
-          return DateTime.parse(meal['time']).isAtSameMomentAs(newRecordTime);
-        } else if (meal['time'] is DateTime) {
-          // 이미 DateTime 타입일 경우 그대로 비교
-          return meal['time'].isAtSameMomentAs(newRecordTime);
-        }
-        return false;
+        return DateTime.parse(meal['time']).isAtSameMomentAs(newRecordTime);
       });
 
-      // 중복되지 않는다면 새로운 기록을 추가
       if (!isDuplicate) {
-        meals = [...meals, newRecord]; // 기존 리스트에 새로운 기록을 추가
+        meals = [...meals, newRecord];
         lastAddedRecord = newRecord;
       }
       logger.i('현재 기록 리스트: $meals');
-      // print('현재 기록 리스트: $meals');
     });
   }
 
-  // 음식명에 따라 이미지를 반환
   String _getImageForFood(String food) {
     switch (food) {
       case '양념치킨':
@@ -89,19 +74,46 @@ class _RecordScreenState extends State<RecordScreen> {
     }
   }
 
+  // 로그아웃 기능 추가 (SharedPreferences 사용)
+  void signOut() async {
+    try {
+      // 카카오 로그아웃 API 호출
+      await UserApi.instance.logout();
+      logger.i('카카오 로그아웃 성공');
+
+      // SharedPreferences에 저장된 세션 정보 삭제
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.clear(); // SharedPreferences에 저장된 모든 데이터 삭제
+      logger.i('로컬 저장된 데이터 삭제 성공');
+
+      // 로그아웃 후 로그인 화면으로 이동
+      context.goNamed(LoginScreen.routeName); // 로그인 화면으로 이동
+    } catch (error) {
+      logger.e('카카오 로그아웃 실패: $error');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('기록 화면'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: signOut, // 로그아웃 버튼 클릭 시 로그아웃 처리
+          ),
+        ],
+      ),
       body: meals.isNotEmpty
           ? ListView.builder(
               padding: const EdgeInsets.symmetric(vertical: Sizes.size16),
               itemCount: meals.length,
               itemBuilder: (context, index) {
                 final meal = meals[index];
-                String formattedTime = DateFormat('HH시 mm분 ss초').format(
-                    DateTime.parse(meal['time'])); // time을 DateTime으로 변환하여 포맷
-                String foodImage =
-                    _getImageForFood(meal['food']); // 음식명에 따른 이미지 경로 가져오기
+                String formattedTime = DateFormat('HH시 mm분 ss초')
+                    .format(DateTime.parse(meal['time']));
+                String foodImage = _getImageForFood(meal['food']);
 
                 return Padding(
                   padding: const EdgeInsets.symmetric(
@@ -109,7 +121,6 @@ class _RecordScreenState extends State<RecordScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // 카드 내용과 이미지를 Row로 배치
                       Card(
                         margin:
                             const EdgeInsets.symmetric(vertical: Sizes.size8),
@@ -117,10 +128,8 @@ class _RecordScreenState extends State<RecordScreen> {
                         child: Padding(
                           padding: const EdgeInsets.all(Sizes.size16),
                           child: Row(
-                            crossAxisAlignment:
-                                CrossAxisAlignment.start, // Row 안에서 상단 정렬
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // 카드 내용
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -132,7 +141,7 @@ class _RecordScreenState extends State<RecordScreen> {
                                           fontSize: 20,
                                           fontWeight: FontWeight.bold),
                                     ),
-                                    const SizedBox(height: 8), // 텍스트 사이 간격
+                                    const SizedBox(height: 8),
                                     Text("음식명 : ${meal['food']}",
                                         style: const TextStyle(
                                           fontFamily: "pretendard-regular",
@@ -155,10 +164,8 @@ class _RecordScreenState extends State<RecordScreen> {
                                   ],
                                 ),
                               ),
-                              // const SizedBox(width: 5), // 카드 내용과 이미지 사이 간격
-                              // 이미지를 위로 배치하기 위해 Align 사용
                               Align(
-                                alignment: Alignment.topRight, // 이미지를 상단으로 정렬
+                                alignment: Alignment.topRight,
                                 child: SizedBox(
                                   width: 66,
                                   height: 66,
@@ -173,7 +180,6 @@ class _RecordScreenState extends State<RecordScreen> {
                         ),
                       ),
                       const SizedBox(height: 1),
-                      // 카드 아래에 기록 시간을 배치
                       Align(
                         alignment: Alignment.centerRight,
                         child: Text(

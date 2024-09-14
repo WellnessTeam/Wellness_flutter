@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class NutritionRepository {
-  final String apiUrl =
-      'http://43.202.124.234:8000/api/v1/recommend/eaten_nutrient?user_id=1&today=2024-09-04'; // 실제 API URL
+  final String apiUrl = dotenv.env['HOME_SCREEN_DATA_URL'] ?? ''; // 실제 API URL
 
   Future<Map<String, dynamic>> fetchNutritionData() async {
     try {

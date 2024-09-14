@@ -50,11 +50,16 @@ dependencies:
   font_awesome_flutter: ^9.2.0
   intl: any
   intl_utils: ^2.8.7
-  kakao_flutter_sdk: ^1.9.2
+  kakao_flutter_sdk: ^1.9.5
   image_picker: ^1.1.2
   permission_handler: ^11.3.1
   percent_indicator: ^4.2.3
   path_provider: ^2.0.11
+  logger: ^2.4.0
+  flutter_dotenv: ^5.1.0
+  shared_preferences: ^2.3.2
+  mime: ^1.0.6
+  http_parser: ^4.0.2
 
 
 dev_dependencies:
@@ -98,6 +103,8 @@ flutter:
     - assets/images/food_icons/spaghetti.png
     - assets/images/food_icons/steak.png
     - assets/images/food_icons/tteokbokki.png
+    - assets/images/food_icons/hot-soup.png
+    - .env
     # - assets/data/sample.json
     # - assets/data/data_for_record.json
     # - assets/data/data_for_analyze.json

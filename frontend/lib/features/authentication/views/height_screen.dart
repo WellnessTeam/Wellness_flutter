@@ -73,14 +73,15 @@ class _HeightScreenState extends ConsumerState<HeightScreen> {
     };
 
     logger.i('${ref.read(signUpForm)}');
-    //print("SignUp Form Data: ${ref.read(signUpForm)}");
 
     context.goNamed(WeightScreen.routeName);
   }
 
   void _onIntegerChanged(String value) {
     if (value.length == 3) {
-      _decimalFocusNode.requestFocus(); // 정수 부분이 3자리가 되면 소수 부분으로 포커스 이동
+      Future.delayed(const Duration(milliseconds: 100), () {
+        _decimalFocusNode.requestFocus(); // 정수 부분이 3자리가 되면 소수 부분으로 포커스 이동
+      });
     }
     _validateInput();
   }
@@ -88,6 +89,7 @@ class _HeightScreenState extends ConsumerState<HeightScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false, // 키보드에 의해 레이아웃이 변경되지 않도록 함
       appBar: AppBar(
         title: Padding(
           padding: const EdgeInsets.only(top: 20.0), // 상단에 20px 패딩 추가

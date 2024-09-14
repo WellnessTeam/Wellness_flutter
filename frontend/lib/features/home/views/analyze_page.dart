@@ -6,6 +6,7 @@ import 'dart:io';
 import 'package:go_router/go_router.dart';
 import 'package:frontend/features/home/views/widgets/nutrition_bar.dart';
 import 'package:frontend/features/home/repos/analyze_repository.dart';
+import 'package:logger/logger.dart';
 
 class AnalyzePage extends StatefulWidget {
   final XFile image;
@@ -20,27 +21,30 @@ class AnalyzePage extends StatefulWidget {
 }
 
 class _AnalyzePageState extends State<AnalyzePage> {
-  String foodName = "짬뽕";
-  int foodKcal = 300;
-  int foodCarb = 50;
-  int foodProt = 20;
-  int foodFat = 35;
+  String foodName = "분석 중...";
+  int foodKcal = 0;
+  int foodCarb = 0;
+  int foodProt = 0;
+  int foodFat = 0;
   int recKcal = 2000;
   int recCarb = 300;
   int recProt = 50;
   int recFat = 70;
 
   final AnalyzeRepository analyzeRepository = AnalyzeRepository();
+  final Logger logger = Logger(); // Logger 인스턴스 생성
 
   @override
   void initState() {
     super.initState();
-    _loadFoodData();
+    _uploadImageAndLoadFoodData();
   }
 
-  Future<void> _loadFoodData() async {
+  Future<void> _uploadImageAndLoadFoodData() async {
     try {
-      final jsonData = await analyzeRepository.fetchAnalyzeData();
+      // 이미지를 서버로 업로드하고 결과를 가져옵니다.
+      final jsonData = await analyzeRepository
+          .uploadImageAndFetchData(File(widget.image.path));
 
       setState(() {
         foodName = jsonData['food_name'] ?? "음식 정보 없음";
@@ -53,8 +57,14 @@ class _AnalyzePageState extends State<AnalyzePage> {
         recProt = (jsonData['rec_prot'] ?? 50).toInt();
         recFat = (jsonData['rec_fat'] ?? 70).toInt();
       });
+
+      // 성공적으로 데이터를 받아온 경우 로그를 출력합니다.
+      logger.i('이미지 업로드 및 분석 성공: $jsonData');
     } catch (e) {
-      print("API 데이터를 불러오는 중 오류 발생(analyze): $e");
+      logger.e('API 데이터를 불러오는 중 오류 발생(analyze): $e'); // 오류 로그
+      setState(() {
+        foodName = "분석 실패";
+      });
     }
   }
 

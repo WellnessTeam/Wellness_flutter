@@ -49,6 +49,7 @@ app.*.map.json
 /ios/
 /build/
 
-
+# project settings
+.env
 
 

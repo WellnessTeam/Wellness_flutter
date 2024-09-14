@@ -13,9 +13,20 @@ import 'package:frontend/features/home/views/record_screen.dart';
 import 'package:image_picker/image_picker.dart'; // AnalyzePage import
 import 'package:flutter/services.dart';
 import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart'; // SystemChrome import
-// import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'dart:io';
 
-void main() {
+class MyHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    // '?'를 추가해서 null safety 확보
+    return super.createHttpClient(context)
+      ..badCertificateCallback =
+          (X509Certificate cert, String host, int port) => true;
+  }
+}
+
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized(); // 플러그인 초기화
 
   // 상태바 스타일 설정
@@ -24,11 +35,12 @@ void main() {
     statusBarIconBrightness: Brightness.dark, // 상태바 아이콘을 어두운 색으로 설정
   ));
 
-  // await dotenv.load(fileName: '.env');
+  await dotenv.load(fileName: '.env');
+  String? kakaoNativeAppKey = dotenv.env['KAKAO_NATIVE_APP_KEY'];
 
-  KakaoSdk.init(
-    nativeAppKey: 'KAKAO_NATIVE_APP_KEY',
-  );
+  KakaoSdk.init(nativeAppKey: kakaoNativeAppKey);
+
+  HttpOverrides.global = MyHttpOverrides();
 
   runApp(
     const ProviderScope(
@@ -50,13 +62,6 @@ class MyApp extends StatelessWidget {
         primaryColor: const Color(0xff28B0EE),
         useMaterial3: true,
         scaffoldBackgroundColor: const Color.fromARGB(255, 255, 255, 255),
-        // appBarTheme: const AppBarTheme(
-        //   //backgroundColor: Colors.white, // AppBar의 배경색을 상태바와 동일하게 설정
-        //   systemOverlayStyle: SystemUiOverlayStyle(
-        //     statusBarColor: Colors.white, // 상태바의 배경색을 일치시킴
-        //     statusBarIconBrightness: Brightness.dark, // 상태바 아이콘을 어둡게 설정
-        //   ),
-        // ),
       ),
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
@@ -67,12 +72,14 @@ class MyApp extends StatelessWidget {
         Locale('en'), // English
         Locale('ko'), // Korean
       ],
+      locale: const Locale('en'), // 기본 로케일 설정
     );
   }
 }
 
 // GoRouter 설정
 final GoRouter _router = GoRouter(
+  initialLocation: LoginScreen.routeURL, // 초기 경로 설정
   routes: [
     GoRoute(
       name: LoginScreen.routeName,
