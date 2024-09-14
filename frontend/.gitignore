@@ -49,6 +49,9 @@ app.*.map.json
 /ios/
 /build/
 
+# project settings
+.env
 
 
 
+frontend/android/java_pid19172.hprof

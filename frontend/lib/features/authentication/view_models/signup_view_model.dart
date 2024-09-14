@@ -28,12 +28,13 @@ class SignupViewModel extends AsyncNotifier<void> {
 
       // 사용자 프로필 생성
       final profile = UserProfileModel(
-        bio: form["bio"] ?? '',
-        link: form["link"] ?? '',
+        // bio: form["bio"] ?? '',
+        // link: form["link"] ?? '',
         email: form["email"]!,
         uid: "dummy-uid", // 실제 서버나 인증 시스템을 사용할 경우, 여기에 UID를 할당
-        name: form["name"] ?? '',
-        sex: form["sex"] ?? '',
+        nickname: form["nickname"] ?? '',
+        age: int.tryParse(form["age"]?.toString() ?? '0') ?? 0,
+        gender: form["gender"] ?? '',
         height: double.tryParse(form["height"] ?? '0') ?? 0.0,
         weight: double.tryParse(form["weight"] ?? '0') ?? 0.0,
       );
@@ -59,7 +60,7 @@ class SignupViewModel extends AsyncNotifier<void> {
   }
 }
 
-final signUpForm = StateProvider<Map<String, String>>((ref) => {});
+final signUpForm = StateProvider<Map<String, dynamic>>((ref) => {});
 
 final signUpProvider = AsyncNotifierProvider<SignupViewModel, void>(
   () => SignupViewModel(),

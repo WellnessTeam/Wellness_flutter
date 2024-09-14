@@ -1,17 +1,73 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/constants/sizes.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import 'package:go_router/go_router.dart'; // go_router를 사용하여 라우팅
+//import 'dart:convert';
+import 'package:go_router/go_router.dart';
+import 'package:frontend/features/home/views/widgets/nutrition_bar.dart';
+import 'package:frontend/features/home/repos/analyze_repository.dart';
+import 'package:logger/logger.dart';
 
-class AnalyzePage extends StatelessWidget {
-  final XFile image; // 업로드된 이미지 파일
+class AnalyzePage extends StatefulWidget {
+  final XFile image;
 
   const AnalyzePage({
-    Key? key,
+    super.key,
     required this.image,
-  }) : super(key: key);
+  });
 
-  // 이미지 메타데이터를 읽어 식사 종류를 결정하는 함수
+  @override
+  _AnalyzePageState createState() => _AnalyzePageState();
+}
+
+class _AnalyzePageState extends State<AnalyzePage> {
+  String foodName = "분석 중...";
+  int foodKcal = 0;
+  int foodCarb = 0;
+  int foodProt = 0;
+  int foodFat = 0;
+  int recKcal = 2000;
+  int recCarb = 300;
+  int recProt = 50;
+  int recFat = 70;
+
+  final AnalyzeRepository analyzeRepository = AnalyzeRepository();
+  final Logger logger = Logger(); // Logger 인스턴스 생성
+
+  @override
+  void initState() {
+    super.initState();
+    _uploadImageAndLoadFoodData();
+  }
+
+  Future<void> _uploadImageAndLoadFoodData() async {
+    try {
+      // 이미지를 서버로 업로드하고 결과를 가져옵니다.
+      final jsonData = await analyzeRepository
+          .uploadImageAndFetchData(File(widget.image.path));
+
+      setState(() {
+        foodName = jsonData['food_name'] ?? "음식 정보 없음";
+        foodKcal = (jsonData['food_kcal'] ?? 0).toInt();
+        foodCarb = (jsonData['food_car'] ?? 0).toInt();
+        foodProt = (jsonData['food_prot'] ?? 0).toInt();
+        foodFat = (jsonData['food_fat'] ?? 0).toInt();
+        recKcal = (jsonData['rec_kcal'] ?? 2000).toInt();
+        recCarb = (jsonData['rec_car'] ?? 300).toInt();
+        recProt = (jsonData['rec_prot'] ?? 50).toInt();
+        recFat = (jsonData['rec_fat'] ?? 70).toInt();
+      });
+
+      // 성공적으로 데이터를 받아온 경우 로그를 출력합니다.
+      logger.i('이미지 업로드 및 분석 성공: $jsonData');
+    } catch (e) {
+      logger.e('API 데이터를 불러오는 중 오류 발생(analyze): $e'); // 오류 로그
+      setState(() {
+        foodName = "분석 실패";
+      });
+    }
+  }
+
   String determineMealType(DateTime dateTime) {
     final hour = dateTime.hour;
     if (hour >= 6 && hour < 9) {
@@ -27,84 +83,155 @@ class AnalyzePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 이미지 파일이 존재하지 않을 경우의 기본값 처리
     final DateTime now = DateTime.now();
     final String determinedMealType = determineMealType(now);
 
-    // 예제 데이터: 식사 종류, 음식명, 칼로리 및 영양정보
-    final String foodName = "샐러드";
-    final int calories = 250;
-    final double carbs = 20;
-    final double protein = 10;
-    final double fat = 15;
-
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('분석 결과'),
-        centerTitle: true,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(50), // AppBar의 높이를 늘립니다
+        child: AppBar(
+          title: const Padding(
+            padding: EdgeInsets.only(top: 30), // Text 위에 20px의 패딩을 추가
+            child: Text(
+              '업로드 한 사진의 분석 결과예요.',
+              style: TextStyle(fontFamily: "myfonts", fontSize: 20),
+            ),
+          ),
+          centerTitle: true,
+          backgroundColor: Colors.white,
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 설정된 Meal Type 표시
             Text(
               "식사 종류: $determinedMealType",
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                  fontFamily: "myfonts",
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
-            // 업로드된 사진 표시
             Center(
               child: Image.file(
-                File(image.path),
-                width: 300,
-                height: 300,
+                File(widget.image.path),
+                width: 250,
                 fit: BoxFit.cover,
               ),
             ),
             const SizedBox(height: 20),
-            // 분류된 음식명 표시
             Text(
               "음식명: $foodName",
-              style: const TextStyle(fontSize: 18),
+              style: const TextStyle(fontFamily: "myfonts", fontSize: 18),
             ),
             const SizedBox(height: 10),
-            // 음식의 칼로리 표시
-            Text(
-              "칼로리: $calories kcal",
-              style: const TextStyle(fontSize: 18),
+            NutritionBar(
+              label: "칼로리",
+              intake: foodKcal,
+              recommended: recKcal,
+              gradient: const LinearGradient(
+                colors: [Color(0xFFFFA726), Color(0xFFFF5722)],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+              ),
             ),
-            const SizedBox(height: 20),
-            // 음식의 영양정보 표시 (탄수화물, 단백질, 지방)
-            const Text(
-              "영양정보:",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            NutritionBar(
+              label: "탄수화물",
+              intake: foodCarb,
+              recommended: recCarb,
+              gradient: const LinearGradient(
+                colors: [Color(0xFF90CAF9), Color(0xFF1E88E5)],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+              ),
             ),
-            const SizedBox(height: 10),
-            Text("탄수화물: $carbs g"),
-            Text("단백질: $protein g"),
-            Text("지방: $fat g"),
+            NutritionBar(
+              label: "단백질",
+              intake: foodProt,
+              recommended: recProt,
+              gradient: const LinearGradient(
+                colors: [Color(0xFFFFF176), Color(0xFFFFC107)],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+              ),
+            ),
+            NutritionBar(
+              label: "지방",
+              intake: foodFat,
+              recommended: recFat,
+              gradient: const LinearGradient(
+                colors: [Color(0xFFF48FB1), Color(0xFFE91E63)],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+              ),
+            ),
             const Spacer(),
-            // 완료 및 취소 버튼
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 ElevatedButton(
                   onPressed: () {
-                    // 완료 버튼 클릭 시 HomeScreen으로 이동
-                    context.go('/home/home');
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: const Text('기록을 취소하실 건가요?'),
+                          content: const Text('확인 버튼을 누르면 결과가 기록되지 않아요!'),
+                          actions: <Widget>[
+                            TextButton(
+                              child: const Text('취소'),
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                              },
+                            ),
+                            TextButton(
+                              child: const Text('확인'),
+                              onPressed: () {
+                                context.go('/home/home');
+                              },
+                            ),
+                          ],
+                        );
+                      },
+                    );
                   },
-                  child: const Text('완료'),
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color.fromARGB(57, 39, 138, 26)),
+                  child: const Text(
+                    '취소',
+                    style: TextStyle(
+                        fontFamily: "pretendard-regular",
+                        fontSize: Sizes.size18,
+                        fontWeight: FontWeight.w700,
+                        color: Color.fromARGB(255, 255, 255, 255)),
+                  ),
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    // 취소 버튼 클릭 시 HomeScreen으로 이동
-                    context.go('/home/home');
+                    Map<String, dynamic> newRecord = {
+                      'type': determinedMealType,
+                      'food': foodName,
+                      'calories': foodKcal,
+                      'carb': foodCarb,
+                      'protein': foodProt,
+                      'fat': foodFat,
+                      'time': DateTime.now().toIso8601String(),
+                    };
+
+                    print('전달될 기록 데이터: $newRecord');
+
+                    context.go('/home/record', extra: newRecord);
                   },
-                  child: const Text('취소'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey, // 회색 버튼
+                      backgroundColor: const Color.fromARGB(57, 39, 138, 26)),
+                  child: const Text(
+                    '완료',
+                    style: TextStyle(
+                        fontFamily: "pretendard-regular",
+                        fontSize: Sizes.size18,
+                        fontWeight: FontWeight.w700,
+                        color: Color.fromARGB(255, 255, 255, 255)),
                   ),
                 ),
               ],

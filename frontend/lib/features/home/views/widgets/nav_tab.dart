@@ -25,19 +25,22 @@ class NavTab extends StatelessWidget {
         onTap: () => onTap(),
         child: AnimatedOpacity(
           duration: const Duration(milliseconds: 300),
-          opacity: isSelected ? 1 : 0.6,
+          opacity: isSelected ? 1 : 0.5,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               FaIcon(
                 isSelected ? selectedIcon : icon,
-                color: Colors.black,
+                color: const Color.fromARGB(255, 39, 138, 26),
               ),
               Gaps.v5,
               Text(
                 text,
                 style: const TextStyle(
-                  color: Colors.black,
+                  fontFamily: "pretendard-regular",
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.bold,
+                  color: Color.fromARGB(255, 0, 0, 0),
                 ),
               )
             ],

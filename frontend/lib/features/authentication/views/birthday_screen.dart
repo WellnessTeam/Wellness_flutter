@@ -7,6 +7,7 @@ import 'package:frontend/features/authentication/views/gender_screen.dart';
 import 'package:frontend/features/authentication/views/widgets/form_button.dart';
 import 'package:frontend/features/authentication/views/widgets/status_bar.dart';
 import 'package:go_router/go_router.dart';
+import 'package:logger/logger.dart';
 
 class BirthdayScreen extends ConsumerStatefulWidget {
   static String routeName = "birthday";
@@ -22,11 +23,27 @@ class _BirthdayScreenState extends ConsumerState<BirthdayScreen> {
   final TextEditingController _birthdayController = TextEditingController();
 
   DateTime initialDate = DateTime.now();
+  String? nickname;
+  String? email;
 
   @override
   void initState() {
     super.initState();
     _setTextFieldDate(initialDate);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // 전달된 데이터를 didChangeDependencies에서 받기
+    final extraData =
+        (GoRouterState.of(context).extra as Map<String, dynamic>?);
+
+    if (extraData != null) {
+      nickname = extraData['nickname'] ?? '';
+      email = extraData['email'] ?? '';
+    }
   }
 
   @override
@@ -36,13 +53,38 @@ class _BirthdayScreenState extends ConsumerState<BirthdayScreen> {
   }
 
   void _onNextTap() {
+    // 나이 계산
+    // final int age = _calculateAge(initialDate);
+    var logger = Logger();
+
+    // 상태에 생년월일 저장
     final state = ref.read(signUpForm.notifier).state;
     ref.read(signUpForm.notifier).state = {
       ...state,
+      "nickname": nickname,
+      "email": email,
       "birthday": _birthdayController.text,
+      // "age": age, // 계산된 나이를 저장
     };
+
+    logger.i('${ref.read(signUpForm)}');
+
     context.goNamed(GenderScreen.routeName);
   }
+
+  // // 나이 계산 함수
+  // int _calculateAge(DateTime birthday) {
+  //   DateTime today = DateTime.now();
+  //   int age = today.year - birthday.year;
+
+  //   // 생일이 올해 지났는지 확인해서 아직 안 지났으면 1살 줄임
+  //   if (today.month < birthday.month ||
+  //       (today.month == birthday.month && today.day < birthday.day)) {
+  //     age--;
+  //   }
+
+  //   return age;
+  // }
 
   void _setTextFieldDate(DateTime date) {
     final textDate = date.toString().split(" ").first;
@@ -69,21 +111,41 @@ class _BirthdayScreenState extends ConsumerState<BirthdayScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Sign up"),
+        title: const Padding(
+          padding: EdgeInsets.only(left: 22.0, top: 20.0),
+          child: Text(
+            "필수 정보 입력",
+            style: TextStyle(
+              fontSize: 20,
+              fontFamily: "pretendard-regular",
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        backgroundColor: Colors.white,
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: Sizes.size36),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: Sizes.size20),
-            const StatusBar(currentStep: 1, totalSteps: 4), // 현재 스텝을 1로 설정
+            const SizedBox(height: Sizes.size10),
+            StatusBar(
+              currentStep: 1,
+              totalSteps: 4,
+              width: MediaQuery.of(context).size.width,
+              stepCompleteColor: Colors.blue,
+              currentStepColor: const Color(0xffdbecff),
+              inactiveColor: const Color(0xffbababa),
+              lineWidth: 3.5,
+            ), // 현재 스텝을 1로 설정
             Gaps.v40,
             const Text(
-              "When's your birthday?",
+              "생년월일을 선택해주세요.",
               style: TextStyle(
-                fontSize: Sizes.size24,
-                fontWeight: FontWeight.w700,
+                fontFamily: "pretendard-regular",
+                fontSize: Sizes.size20,
+                fontWeight: FontWeight.w600,
               ),
             ),
             Gaps.v16,
@@ -112,9 +174,7 @@ class _BirthdayScreenState extends ConsumerState<BirthdayScreen> {
             GestureDetector(
               onTap: _birthdayController.text.isNotEmpty ? _onNextTap : null,
               child: FormButton(
-                disabled: _birthdayController.text.isEmpty,
-                text: "Next",
-              ),
+                  disabled: _birthdayController.text.isEmpty, text: "Next"),
             ),
           ],
         ),

@@ -7,6 +7,7 @@ import 'package:frontend/features/authentication/views/widgets/form_button.dart'
 import 'package:frontend/features/authentication/views/height_screen.dart';
 import 'package:frontend/features/authentication/views/widgets/status_bar.dart';
 import 'package:go_router/go_router.dart';
+import 'package:logger/logger.dart';
 
 class GenderScreen extends ConsumerStatefulWidget {
   static String routeName = "gender";
@@ -20,6 +21,7 @@ class GenderScreen extends ConsumerStatefulWidget {
 
 class _GenderScreenState extends ConsumerState<GenderScreen> {
   String _selectedGender = "없음";
+  var logger = Logger();
 
   void _onNextTap() {
     final state = ref.read(signUpForm.notifier).state;
@@ -27,6 +29,10 @@ class _GenderScreenState extends ConsumerState<GenderScreen> {
       ...state,
       "gender": _selectedGender,
     };
+
+    // 현재 signUpForm 상태를 출력하여 확인
+    //print("SignUp Form Data: ${ref.read(signUpForm)}");
+    logger.i('${ref.read(signUpForm)}');
 
     context.goNamed(HeightScreen.routeName);
   }
@@ -41,27 +47,54 @@ class _GenderScreenState extends ConsumerState<GenderScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Sign up"),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            context.goNamed("birthday");
-          },
+        title: Padding(
+          padding: const EdgeInsets.only(top: 20.0), // 상단에 20px 패딩 추가
+          child: Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () {
+                  context.goNamed("birthday");
+                },
+              ),
+              const Padding(
+                padding: EdgeInsets.only(left: 8.0), // 아이콘과 텍스트 사이의 간격
+                child: Text(
+                  "필수 정보 입력",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontFamily: "pretendard-regular",
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
+        backgroundColor: Colors.white,
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: Sizes.size36),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: Sizes.size20),
-            const StatusBar(currentStep: 2, totalSteps: 4), // 현재 스텝을 2로 설정
+            const SizedBox(height: Sizes.size10),
+            StatusBar(
+              currentStep: 2,
+              totalSteps: 4,
+              width: MediaQuery.of(context).size.width,
+              stepCompleteColor: Colors.blue,
+              currentStepColor: const Color(0xffdbecff),
+              inactiveColor: const Color(0xffbababa),
+              lineWidth: 3.5,
+            ), // 현재 스텝을 2로 설정
             Gaps.v40,
             const Text(
-              "Select your gender",
+              "성별을 선택해주세요.",
               style: TextStyle(
-                fontSize: Sizes.size24,
-                fontWeight: FontWeight.w700,
+                fontFamily: "pretendard-regular",
+                fontSize: Sizes.size20,
+                fontWeight: FontWeight.w600,
               ),
             ),
             Gaps.v16,
@@ -75,16 +108,17 @@ class _GenderScreenState extends ConsumerState<GenderScreen> {
                     padding: const EdgeInsets.symmetric(vertical: Sizes.size80),
                     decoration: BoxDecoration(
                       color: _selectedGender == '남성'
-                          ? Theme.of(context).primaryColor
-                          : Colors.grey.shade300,
+                          ? const Color(0xffdbecff)
+                          : const Color.fromARGB(255, 238, 237, 237),
                       borderRadius: BorderRadius.circular(Sizes.size12),
                     ),
                     child: Center(
                       child: Text(
                         "남성",
                         style: TextStyle(
+                          fontFamily: "pretendard-regular",
                           color: _selectedGender == '남성'
-                              ? Colors.white
+                              ? const Color.fromARGB(255, 0, 0, 0)
                               : Colors.black,
                           fontSize: Sizes.size18,
                           fontWeight: FontWeight.w600,
@@ -100,16 +134,17 @@ class _GenderScreenState extends ConsumerState<GenderScreen> {
                     padding: const EdgeInsets.symmetric(vertical: Sizes.size80),
                     decoration: BoxDecoration(
                       color: _selectedGender == '여성'
-                          ? const Color(0xFFE75480) // 밝은 버건디 색상
-                          : Colors.grey.shade300,
+                          ? const Color(0xffdbecff)
+                          : const Color.fromARGB(255, 238, 237, 237),
                       borderRadius: BorderRadius.circular(Sizes.size12),
                     ),
                     child: Center(
                       child: Text(
                         "여성",
                         style: TextStyle(
+                          fontFamily: "pretendard-regular",
                           color: _selectedGender == '여성'
-                              ? Colors.white
+                              ? const Color.fromARGB(255, 0, 0, 0)
                               : Colors.black,
                           fontSize: Sizes.size18,
                           fontWeight: FontWeight.w600,

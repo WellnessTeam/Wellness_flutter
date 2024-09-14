@@ -30,9 +30,10 @@ class DummyUserRepository {
     if (_users.containsKey(uid)) {
       final user = _users[uid]!;
       _users[uid] = user.copyWith(
-        bio: updates['bio'] ?? user.bio,
-        link: updates['link'] ?? user.link,
-        sex: updates['sex'] ?? user.sex,
+        // bio: updates['bio'] ?? user.bio,
+        // link: updates['link'] ?? user.link,
+        gender: updates['sex'] ?? user.gender,
+        age: updates['age'] ?? user.age,
         height: updates['height']?.toDouble() ?? user.height,
         weight: updates['weight']?.toDouble() ?? user.weight,
       );

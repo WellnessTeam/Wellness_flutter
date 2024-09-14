@@ -7,9 +7,11 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:percent_indicator/circular_percent_indicator.dart'; // 패키지 추가
-import 'package:intl/intl.dart'; // 날짜 형식을 위한 패키지
-import 'record_screen.dart'; // RecordScreen 추가
+import 'package:percent_indicator/circular_percent_indicator.dart';
+import 'record_screen.dart';
+import 'package:frontend/features/home/repos/nutrition_repository.dart'; // 리포지토리 추가
+import 'package:flutter/services.dart';
+import 'package:logger/logger.dart';
 
 class HomeScreen extends StatefulWidget {
   static const String routeName = "home";
@@ -28,18 +30,90 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   double intakeRatio = 0.0;
-  final List<String> tabs = [
-    "home",
-    "record",
-  ];
+  final List<String> tabs = ["home", "record"];
+  Map<String, dynamic> jsonData = {
+    'nickname': '이름', // 기본 닉네임
+    'total_kcal': 0, // 기본 섭취 칼로리
+    'rec_kcal': 2000, // 기본 권장 칼로리
+    'total_car': 0, // 기본 탄수화물 섭취
+    'total_prot': 0, // 기본 단백질 섭취
+    'total_fat': 0, // 기본 지방 섭취
+    'rec_car': 300, // 기본 탄수화물 권장량
+    'rec_prot': 50, // 기본 단백질 권장량
+    'rec_fat': 70, // 기본 지방 권장량
+  }; // 기본값 설정
 
+  final NutritionRepository nutritionRepository =
+      NutritionRepository(); // API 리포지토리
+
+  bool _isLoading = true; // 로딩상태 관리
+  bool _isLatestFirst = true; // 정렬 상태
   late int _selectedIndex;
   bool _isRequestingPermission = false;
+  var logger = Logger();
 
   @override
   void initState() {
     super.initState();
     _selectedIndex = _getIndexFromTab(widget.tab);
+    _loadNutritionData(); // 데이터를 로드
+
+    // 5초 후 로딩을 중단하고 기본 값을 보여주도록 설정
+    Future.delayed(const Duration(seconds: 5), () {
+      if (_isLoading) {
+        setState(() {
+          _isLoading = false; // 5초 후 로딩 상태를 해제하고 기본값을 보여줌
+        });
+      }
+    });
+  }
+
+  // API에서 데이터 받기
+  Future<void> _loadNutritionData() async {
+    try {
+      final response = await nutritionRepository.fetchNutritionData();
+      // 응답에서 필요한 데이터 파싱
+
+      final detail = response['detail']['wellness_recommend_info'];
+      logger.i('++++++++++++++++++in 0++++++++++++++++++');
+
+      if (mounted) {
+        setState(() {
+          jsonData = {
+            'total_kcal': detail['total_kcal'] ?? 0, // 섭취 칼로리
+            'total_car': detail['total_car'] ?? 0, // 섭취 탄수화물
+            'total_prot': detail['total_prot'] ?? 0, // 섭취 단백질
+            'total_fat': detail['total_fat'] ?? 0, // 섭취 지방
+            'rec_kcal': detail['rec_kcal'] ?? 2000, // 권장 칼로리
+            'rec_car': detail['rec_car'] ?? 300, // 권장 탄수화물
+            'rec_prot': detail['rec_prot'] ?? 50, // 권장 단백질
+            'rec_fat': detail['rec_fat'] ?? 70, // 권장 지방
+          };
+          _isLoading = false; // 데이터를 성공적으로 받으면 로딩 해제
+        });
+      }
+    } catch (e) {
+      debugPrint("데이터를 불러오는 중 오류 발생(home_screen): $e");
+      // 오류가 발생하면 기본값을 그대로 사용
+      if (mounted) {
+        setState(() {
+          _isLoading = false; // 오류가 발생해도 로딩 해제
+        });
+      }
+    }
+  }
+
+  //progress bar 색상설정
+  Color _getProgressColor(double intakeRatio) {
+    if (intakeRatio < 0.5) {
+      return const Color.fromARGB(255, 255, 179, 80); // 50% 이하일 때 초록색
+    } else if (intakeRatio >= 0.5 && intakeRatio < 0.75) {
+      return const Color.fromARGB(255, 97, 170, 87); // 50%에서 80% 사이일 때 노란색
+    } else if (intakeRatio >= 0.75 && intakeRatio <= 1.0) {
+      return const Color.fromARGB(255, 68, 143, 255); // 80%에서 100% 사이일 때 주황색
+    } else {
+      return const Color.fromARGB(255, 255, 61, 87); // 100% 초과 시 빨간색
+    }
   }
 
   int _getIndexFromTab(String tab) {
@@ -53,8 +127,9 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  // 이미지 선택 권한
   Future<void> _pickImage() async {
-    if (_isRequestingPermission) return; // 권한 요청 중복 방지
+    if (_isRequestingPermission) return;
 
     _isRequestingPermission = true;
 
@@ -77,7 +152,7 @@ class _HomeScreenState extends State<HomeScreen> {
               await picker.pickImage(source: ImageSource.gallery);
 
           if (image != null && mounted) {
-            context.go('/analyze', extra: image);
+            context.go('/analyze', extra: image); //api로 가도록 수정
           }
         } else if (status.isDenied || status.isPermanentlyDenied) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -98,11 +173,16 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  // tab이 눌릴 떄 마다 데이터 받기
   void _onTap(int index) {
     setState(() {
       _selectedIndex = index;
-      intakeRatio = 0.90;
     });
+
+    // 홈 탭(인덱스 0)이 선택될 때마다 데이터를 다시 불러옴
+    if (index == 0) {
+      _loadNutritionData(); // 홈 탭이 선택될 때마다 데이터를 새로 받아옴
+    }
 
     String selectedTab = tabs[index];
     context.go('/home/$selectedTab');
@@ -111,22 +191,324 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: _buildAppBar(), // AppBar를 동적으로 설정
       resizeToAvoidBottomInset: false,
-      body: IndexedStack(
-        index: _selectedIndex,
+      body: Column(
         children: [
-          _buildHomeScreen(context),
-          const RecordScreen(),
+          // 기록 화면일 때만 ToggleButtons 표시
+          if (_selectedIndex == 1)
+            Padding(
+              padding: const EdgeInsets.all(0),
+              child: ToggleButtons(
+                constraints: const BoxConstraints(
+                  minHeight: 30.0, // 적절한 높이 설정
+                  minWidth: 70.0, // 버튼의 너비도 설정
+                ),
+                isSelected: [_isLatestFirst, !_isLatestFirst], // 선택 상태
+                onPressed: (index) {
+                  setState(() {
+                    // 누른 버튼의 상태를 반대로 변경
+                    _isLatestFirst = index == 0;
+                  });
+                },
+                color: Colors.black,
+                selectedColor: const Color.fromARGB(255, 0, 0, 0), // 선택된 텍스트 색상
+                fillColor:
+                    const Color.fromARGB(255, 232, 245, 233), // 선택된 버튼의 배경색
+                borderRadius: BorderRadius.circular(10),
+                borderColor: Colors.black,
+                selectedBorderColor: Colors.black, // 선택된 버튼의 테두리 색상
+                borderWidth: 1.2,
+                children: const [
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    child: Text('최신순',
+                        style: TextStyle(
+                          fontFamily: "pretendard-regular",
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        )),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    child: Text('과거순',
+                        style: TextStyle(
+                          fontFamily: "pretendard-regular",
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        )),
+                  ),
+                ],
+              ),
+            ),
+
+          // 화면 내용 표시
+          Expanded(
+            child: IndexedStack(
+              index: _selectedIndex,
+              children: [
+                _isLoading
+                    ? const Center(
+                        child:
+                            CircularProgressIndicator(), // 로딩 중일 때 로딩 애니메이션 표시
+                      )
+                    : _buildHomeScreen(context), // 로딩이 완료되면 홈 화면 표시
+                RecordScreen(isLatestFirst: _isLatestFirst),
+              ],
+            ),
+          ),
         ],
       ),
-      bottomNavigationBar: Padding(
-        padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).padding.bottom + Sizes.size12),
+      bottomNavigationBar: _buildBottomNavigationBar(context),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar() {
+    return PreferredSize(
+      preferredSize: const Size.fromHeight(80),
+      child: Padding(
+        padding: const EdgeInsets.only(top: 20),
+        child: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          centerTitle: true,
+          title: Text(
+            _selectedIndex == 0 ? "홈 화면" : "기록 화면",
+            style: const TextStyle(
+              fontFamily: "myfonts",
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
+          ),
+          iconTheme: const IconThemeData(
+            color: Colors.black, // 아이콘 색상 고정
+          ),
+          systemOverlayStyle: const SystemUiOverlayStyle(
+            statusBarColor: Colors.white, // 상태바 배경색 고정
+            statusBarIconBrightness: Brightness.dark, // 상태바 아이콘 색상 고정
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHomeScreen(BuildContext context) {
+    String nickname = jsonData['nickname'] ?? "이름";
+    int totalKcal = (jsonData['total_kcal'] ?? 0).toInt();
+    int recKcal = (jsonData['rec_kcal'] ?? 0).toInt();
+    double intakeRatio = totalKcal / recKcal;
+    int remainingCalories = recKcal - totalKcal;
+
+    int totalCar = (jsonData['total_car'] ?? 0).toInt();
+    int totalProt = (jsonData['total_prot'] ?? 0).toInt();
+    int totalFat = (jsonData['total_fat'] ?? 0).toInt();
+
+    int recCar = (jsonData['rec_car'] ?? 0).toInt();
+    int recProt = (jsonData['rec_prot'] ?? 0).toInt();
+    int recFat = (jsonData['rec_fat'] ?? 0).toInt();
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 30, left: 25, right: 25),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Gaps.v24,
+          Align(
+            alignment: Alignment.center,
+            child: Text(
+              "$nickname 님",
+              style: const TextStyle(
+                fontFamily: "myfonts",
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+          ),
+          Gaps.v20,
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              RichText(
+                text: TextSpan(
+                  children: [
+                    TextSpan(
+                      text: "$totalKcal",
+                      style: const TextStyle(
+                        fontFamily: "appname",
+                        fontSize: 30,
+                        color: Color.fromARGB(221, 0, 0, 0),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const TextSpan(
+                      text: " / ",
+                      style: TextStyle(
+                        fontFamily: "myfonts",
+                        fontSize: 18,
+                        color: Color.fromARGB(221, 0, 0, 0),
+                      ),
+                    ),
+                    TextSpan(
+                      text: "$recKcal kcal",
+                      style: const TextStyle(
+                        fontFamily: "myfonts",
+                        fontSize: 18,
+                        color: Color.fromARGB(221, 0, 0, 0),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                children: [
+                  Gaps.v44,
+                  SizedBox(
+                    height: 200.0,
+                    width: 200.0,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        CircularPercentIndicator(
+                          radius: 80.0,
+                          lineWidth: 13.0,
+                          animation: true,
+                          animationDuration: 1500,
+                          percent: intakeRatio > 1 ? 1.0 : intakeRatio,
+                          center: SizedBox(
+                            height: 40.0,
+                            child: Center(
+                              child: Text(
+                                "${(intakeRatio * 100).toStringAsFixed(0)}%",
+                                style: const TextStyle(
+                                  fontFamily: "myfonts",
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 27.0,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ),
+                          ),
+                          circularStrokeCap: CircularStrokeCap.round,
+                          backgroundColor:
+                              const Color.fromARGB(132, 143, 165, 206),
+                          progressColor: _getProgressColor(intakeRatio),
+                          backgroundWidth: 8,
+                        ),
+                        if (intakeRatio > 1)
+                          CircularPercentIndicator(
+                            radius: 100.0,
+                            lineWidth: 13.0,
+                            animation: true,
+                            animationDuration: 1500,
+                            percent: (intakeRatio - 1).clamp(0, 1),
+                            circularStrokeCap: CircularStrokeCap.round,
+                            backgroundColor: Colors.transparent,
+                            progressColor:
+                                const Color.fromARGB(255, 255, 61, 87),
+                            backgroundWidth: 5,
+                          ),
+                      ],
+                    ),
+                  ),
+                  Gaps.v32,
+                  RichText(
+                    textAlign: TextAlign.center,
+                    text: TextSpan(
+                      style: const TextStyle(
+                        fontFamily: "myfonts",
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      children: [
+                        TextSpan(
+                          text: remainingCalories > 0
+                              ? "$remainingCalories kcal"
+                              : "너무 많이 먹는 건 건강에 좋지 않아요🥲",
+                          style: TextStyle(
+                            fontFamily: "myfonts",
+                            color: remainingCalories > 0
+                                ? const Color.fromARGB(221, 0, 160, 13)
+                                : Colors.red,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        if (remainingCalories > 0)
+                          const TextSpan(
+                            text: " 더 먹을 수 있어요!",
+                            style: TextStyle(
+                              color: Colors.black87,
+                              fontWeight: FontWeight.normal,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  Gaps.v32,
+                  NutritionBar(
+                    label: "탄수화물",
+                    intake: totalCar,
+                    recommended: recCar,
+                    gradient: const LinearGradient(
+                      colors: [
+                        Color.fromARGB(255, 156, 194, 255),
+                        Color.fromARGB(255, 48, 97, 255)
+                      ],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                    ),
+                  ),
+                  Gaps.v8,
+                  NutritionBar(
+                    label: "단백질",
+                    intake: totalProt,
+                    recommended: recProt,
+                    gradient: const LinearGradient(
+                      colors: [
+                        Color.fromARGB(195, 255, 241, 181),
+                        Color.fromARGB(255, 255, 195, 30)
+                      ],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                    ),
+                  ),
+                  Gaps.v8,
+                  NutritionBar(
+                    label: "지방",
+                    intake: totalFat,
+                    recommended: recFat,
+                    gradient: const LinearGradient(
+                      colors: [
+                        Color.fromARGB(255, 255, 160, 192),
+                        Color.fromARGB(255, 255, 56, 156)
+                      ],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomNavigationBar(BuildContext context) {
+    return Container(
+      color: const Color.fromARGB(57, 39, 138, 26),
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          vertical: MediaQuery.of(context).padding.bottom > 0
+              ? Sizes.size8
+              : Sizes.size12,
+        ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             NavTab(
-              text: "Home",
+              text: "홈",
               isSelected: _selectedIndex == 0,
               icon: FontAwesomeIcons.houseUser,
               onTap: () => _onTap(0),
@@ -138,18 +520,19 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.black,
+                  color: const Color.fromARGB(255, 39, 138, 26),
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.2),
                       spreadRadius: 1,
                       blurRadius: 8,
-                      offset: Offset(0, 2),
+                      offset: const Offset(0, 2),
                     ),
                   ],
                 ),
                 child: const FaIcon(
+                  size: 30,
                   FontAwesomeIcons.camera,
                   color: Colors.white,
                 ),
@@ -157,7 +540,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             Gaps.h48,
             NavTab(
-              text: "Record",
+              text: "나의 오늘",
               isSelected: _selectedIndex == 1,
               icon: FontAwesomeIcons.utensils,
               onTap: () => _onTap(1),
@@ -165,140 +548,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildHomeScreen(BuildContext context) {
-    // 현재 날짜를 불러오기 (시스템 날짜)
-    String todayDate = DateFormat('yyyy년 M월 d일').format(DateTime.now());
-    // 예시 데이터: 닉네임, 섭취 칼로리, 권장 칼로리
-    String nickname = "홍길동";
-    int intakeCalories = 1800; // 섭취 칼로리 예시
-    int recommendedCalories = 2000; // 권장 칼로리 예시
-    double intakeRatio = intakeCalories / recommendedCalories;
-
-    // 예시 데이터: 탄수화물, 단백질, 지방
-    double carbIntake = 150;
-    double carbRecommended = 200;
-    double proteinIntake = 80;
-    double proteinRecommended = 100;
-    double fatIntake = 50;
-    double fatRecommended = 70;
-
-    return Padding(
-      padding: const EdgeInsets.all(Sizes.size12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // 닉네임 표시
-          Padding(
-            padding: const EdgeInsets.only(top: Sizes.size48),
-            child: Text(
-              "$nickname 님",
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87, // 깔끔한 컬러
-              ),
-            ),
-          ),
-          Gaps.v8,
-          // 날짜 표시
-          Align(
-            alignment: Alignment.center,
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: Sizes.size24, vertical: Sizes.size6),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border.all(color: Colors.grey[300]!, width: 1),
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
-                    spreadRadius: 1,
-                    blurRadius: 5,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Text(
-                todayDate,
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: Colors.black87,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ),
-          Gaps.v32,
-          // 섭취 칼로리 / 권장 칼로리 원형 차트
-          CircularPercentIndicator(
-            radius: 110.0,
-            lineWidth: 13.0,
-            animation: true,
-            animationDuration: 1000,
-            percent: intakeRatio,
-            center: Text(
-              "${(intakeRatio * 100).toStringAsFixed(1)}%",
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 20.0,
-                color: Colors.black87, // 깔끔한 텍스트 컬러
-              ),
-            ),
-            footer: Column(
-              children: [
-                Gaps.v16,
-                Text(
-                  "섭취 칼로리: $intakeCalories kcal",
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Colors.black87,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                Gaps.v8,
-                Text(
-                  "권장 칼로리: $recommendedCalories kcal",
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Colors.black87,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-            circularStrokeCap: CircularStrokeCap.round,
-            progressColor: Colors.blueAccent,
-            backgroundColor: Colors.grey[200]!,
-            backgroundWidth: 3,
-          ),
-          Gaps.v32,
-          // 섭취/권장 탄단지 막대 그래프
-          NutritionBar(
-            label: "탄수화물",
-            intake: carbIntake,
-            recommended: carbRecommended,
-            color: Colors.orange,
-          ),
-          Gaps.v8,
-          NutritionBar(
-            label: "단백질",
-            intake: proteinIntake,
-            recommended: proteinRecommended,
-            color: Colors.green,
-          ),
-          Gaps.v8,
-          NutritionBar(
-            label: "지방",
-            intake: fatIntake,
-            recommended: fatRecommended,
-            color: Colors.red,
-          ),
-        ],
       ),
     );
   }
