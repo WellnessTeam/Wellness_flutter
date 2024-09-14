@@ -53,3 +53,5 @@ app.*.map.json
 .env
 
 
+
+frontend/android/java_pid19172.hprof
