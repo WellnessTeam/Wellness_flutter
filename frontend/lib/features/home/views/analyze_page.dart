@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:frontend/features/home/views/widgets/nutrition_bar.dart';
 import 'package:frontend/features/home/repos/analyze_repository.dart';
 import 'package:logger/logger.dart';
+import 'package:exif/exif.dart';
 
 class AnalyzePage extends StatefulWidget {
   final XFile image;
@@ -22,6 +23,8 @@ class AnalyzePage extends StatefulWidget {
 
 class _AnalyzePageState extends State<AnalyzePage> {
   String foodName = "분석 중...";
+  String mealtype = "분석 중...";
+  String date = "분석 중...";
   int foodKcal = 0;
   int foodCarb = 0;
   int foodProt = 0;
@@ -37,29 +40,60 @@ class _AnalyzePageState extends State<AnalyzePage> {
   @override
   void initState() {
     super.initState();
+    _extractDateFromImage();
     _uploadImageAndLoadFoodData();
+  }
+
+  // 이미지 메타데이터에서 date를 추출하는 함수
+  Future<void> _extractDateFromImage() async {
+    try {
+      // 이미지 파일을 바이트로 읽기
+      final imageFile = File(widget.image.path);
+      final imageData = await imageFile.readAsBytes();
+
+      // EXIF 정보 추출
+      final tags = await readExifFromBytes(imageData);
+
+      // DateTimeOriginal 키를 통해 메타데이터에서 날짜를 가져옵니다.
+      if (tags.containsKey('EXIF DateTimeOriginal')) {
+        date = tags['EXIF DateTimeOriginal'].toString();
+        logger.i('Extracted Date from metadata: $date');
+        setState(() {});
+      } else {
+        logger.i('No date metadata found in the image.');
+      }
+    } catch (e) {
+      logger.e('Error extracting metadata: $e');
+    }
   }
 
   Future<void> _uploadImageAndLoadFoodData() async {
     try {
-      // 이미지를 서버로 업로드하고 결과를 가져옵니다.
-      final jsonData = await analyzeRepository
+      // JSON 데이터를 받아옵니다.
+      final Map<String, dynamic> jsonData = await analyzeRepository
           .uploadImageAndFetchData(File(widget.image.path));
 
-      setState(() {
-        foodName = jsonData['food_name'] ?? "음식 정보 없음";
-        foodKcal = (jsonData['food_kcal'] ?? 0).toInt();
-        foodCarb = (jsonData['food_car'] ?? 0).toInt();
-        foodProt = (jsonData['food_prot'] ?? 0).toInt();
-        foodFat = (jsonData['food_fat'] ?? 0).toInt();
-        recKcal = (jsonData['rec_kcal'] ?? 2000).toInt();
-        recCarb = (jsonData['rec_car'] ?? 300).toInt();
-        recProt = (jsonData['rec_prot'] ?? 50).toInt();
-        recFat = (jsonData['rec_fat'] ?? 70).toInt();
-      });
+      // API 응답 전체를 로그에 출력하여 확인
+      logger.i('API 응답: $jsonData');
 
-      // 성공적으로 데이터를 받아온 경우 로그를 출력합니다.
-      logger.i('이미지 업로드 및 분석 성공: $jsonData');
+      setState(() {
+        var wellnessData = jsonData['detail']['wellness_image_info'];
+
+        // `date` 정보 추출 및 로깅
+        //date = wellnessData['date'] ?? "날짜 정보 없음";
+        //logger.i('Extracted Date: $date');
+
+        foodName = wellnessData['category_name'] ?? "음식 정보 없음";
+        mealtype = wellnessData['meal_type'] ?? '식사 타입 없음';
+        foodKcal = (wellnessData['food_kcal'] ?? 0).toInt();
+        foodCarb = (wellnessData['food_car'] ?? 0).toInt();
+        foodProt = (wellnessData['food_prot'] ?? 0).toInt();
+        foodFat = (wellnessData['food_fat'] ?? 0).toInt();
+        recKcal = (wellnessData['rec_kcal'] ?? 2000).toInt();
+        recCarb = (wellnessData['rec_car'] ?? 300).toInt();
+        recProt = (wellnessData['rec_prot'] ?? 50).toInt();
+        recFat = (wellnessData['rec_fat'] ?? 70).toInt();
+      });
     } catch (e) {
       logger.e('API 데이터를 불러오는 중 오류 발생(analyze): $e'); // 오류 로그
       setState(() {
@@ -68,23 +102,23 @@ class _AnalyzePageState extends State<AnalyzePage> {
     }
   }
 
-  String determineMealType(DateTime dateTime) {
-    final hour = dateTime.hour;
-    if (hour >= 6 && hour < 9) {
-      return '아침';
-    } else if (hour >= 11 && hour < 14) {
-      return '점심';
-    } else if (hour >= 17 && hour < 20) {
-      return '저녁';
-    } else {
-      return '기타';
-    }
-  }
+  // String determineMealType(DateTime dateTime) {
+  //   final hour = dateTime.hour;
+  //   if (hour >= 6 && hour < 9) {
+  //     return '아침';
+  //   } else if (hour >= 11 && hour < 14) {
+  //     return '점심';
+  //   } else if (hour >= 17 && hour < 20) {
+  //     return '저녁';
+  //   } else {
+  //     return '기타';
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
-    final DateTime now = DateTime.now();
-    final String determinedMealType = determineMealType(now);
+    //inal DateTime now = DateTime.now();
+    //final String determinedMealType = determineMealType(now);
 
     return Scaffold(
       appBar: PreferredSize(
@@ -106,7 +140,7 @@ class _AnalyzePageState extends State<AnalyzePage> {
         child: Column(
           children: [
             Text(
-              "식사 종류: $determinedMealType",
+              "식사 종류: $mealtype",
               style: const TextStyle(
                   fontFamily: "myfonts",
                   fontSize: 20,
@@ -210,7 +244,7 @@ class _AnalyzePageState extends State<AnalyzePage> {
                 ElevatedButton(
                   onPressed: () {
                     Map<String, dynamic> newRecord = {
-                      'type': determinedMealType,
+                      'type': mealtype,
                       'food': foodName,
                       'calories': foodKcal,
                       'carb': foodCarb,

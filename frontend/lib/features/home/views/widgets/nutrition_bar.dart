@@ -26,7 +26,11 @@ class _NutritionBarState extends State<NutritionBar>
   @override
   void initState() {
     super.initState();
-    double percentage = widget.intake / widget.recommended;
+
+    // recommended가 0이 아닐 때만 비율을 계산하고, 아니면 0으로 설정
+    double percentage = widget.recommended > 0
+        ? (widget.intake / widget.recommended).clamp(0.0, 1.0)
+        : 0.0;
 
     _controller = AnimationController(
       vsync: this,

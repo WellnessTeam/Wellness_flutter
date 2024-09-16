@@ -2,7 +2,7 @@ import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart';
 import 'package:logger/logger.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+//import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/services.dart';
 
 class KakaoLoginService {
@@ -10,8 +10,8 @@ class KakaoLoginService {
 
   // 인가 코드를 FastAPI로 전달하는 함수
   Future<void> sendAuthCodeToBackend(String authCode) async {
-    var url =
-        dotenv.env['KAKAO_AUTH_URL'] ?? ''; // .env 파일에서 URL 가져오기(FastAPI 엔드포인트)
+    var url = 'http://43.202.124.234:8000/api/v1/auth/code/kakao';
+    // dotenv.env['KAKAO_AUTH_URL'] ?? ''; // .env 파일에서 URL 가져오기(FastAPI 엔드포인트)
     if (url.isEmpty) {
       _logger.e('Kakao auth URL is not set');
       return;
@@ -52,14 +52,40 @@ class KakaoLoginService {
         _logger.i('카카오계정으로 로그인 성공');
       }
 
-      // 인가 코드(액세스 토큰)를 FastAPI로 전송
-      await sendAuthCodeToBackend(token.accessToken);
+      // 결과를 저장할 변수들
+      bool authCodeSent = false;
+      User? user;
 
-      // 사용자 정보 가져오기
-      User user = await UserApi.instance.me();
-      String? nickname = user.kakaoAccount?.profile?.nickname;
-      String? email = user.kakaoAccount?.email;
+      // 두 작업을 개별적으로 실행하고 각각의 결과를 처리
+      await Future.wait([
+        sendAuthCodeToBackend(token.accessToken).then((_) {
+          authCodeSent = true;
+        }).catchError((error) {
+          _logger.e('Authorization code sending failed: $error');
+        }),
+        UserApi.instance.me().then((fetchedUser) {
+          user = fetchedUser;
+        }).catchError((error) {
+          _logger.e('Failed to fetch user info: $error');
+        }),
+      ]);
 
+      // 작업 결과 확인
+      if (!authCodeSent) {
+        _logger.e('Failed to send authorization code to the backend.');
+      }
+
+      if (user == null) {
+        _logger.e('Failed to fetch user info from Kakao.');
+        return {
+          'nickname': null,
+          'email': null,
+        };
+      }
+
+      // 사용자 정보 추출
+      String? nickname = user?.kakaoAccount?.profile?.nickname;
+      String? email = user?.kakaoAccount?.email;
       _logger.i('사용자 정보: 닉네임 - $nickname, 이메일 - $email');
 
       return {
