@@ -32,6 +32,15 @@ class _HeightScreenState extends ConsumerState<HeightScreen> {
   String? _errorMessage;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      FocusScope.of(context)
+          .requestFocus(_integerFocusNode); // 화면이 빌드된 후에 포커스 설정
+    });
+  }
+
+  @override
   void dispose() {
     _integerController.dispose();
     _decimalController.dispose();
@@ -79,17 +88,17 @@ class _HeightScreenState extends ConsumerState<HeightScreen> {
 
   void _onIntegerChanged(String value) {
     if (value.length == 3) {
-      Future.delayed(const Duration(milliseconds: 100), () {
-        _decimalFocusNode.requestFocus(); // 정수 부분이 3자리가 되면 소수 부분으로 포커스 이동
-      });
+      _decimalFocusNode.requestFocus(); // 즉시 포커스 이동
     }
     _validateInput();
   }
 
   @override
   Widget build(BuildContext context) {
+    // 키보드 높이 가져오기
+    final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
+
     return Scaffold(
-      resizeToAvoidBottomInset: false, // 키보드에 의해 레이아웃이 변경되지 않도록 함
       appBar: AppBar(
         title: Padding(
           padding: const EdgeInsets.only(top: 20.0), // 상단에 20px 패딩 추가
@@ -117,8 +126,13 @@ class _HeightScreenState extends ConsumerState<HeightScreen> {
         ),
         backgroundColor: Colors.white,
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: Sizes.size36),
+      body: SingleChildScrollView(
+        // SingleChildScrollView로 감싸서 스크롤 가능하게 함
+        padding: EdgeInsets.only(
+          left: Sizes.size36,
+          right: Sizes.size36,
+          bottom: bottomPadding, // 키보드 높이만큼 패딩 추가
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

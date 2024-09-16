@@ -71,9 +71,10 @@ class _HomeScreenState extends State<HomeScreen> {
   // API에서 데이터 받기
   Future<void> _loadNutritionData() async {
     try {
+      // fetchNutritionData 메소드 호출 시 토큰 전달
       final response = await nutritionRepository.fetchNutritionData();
-      // 응답에서 필요한 데이터 파싱
 
+      // 응답에서 필요한 데이터 파싱
       final detail = response['detail']['wellness_recommend_info'];
       logger.i('++++++++++++++++++in 0++++++++++++++++++');
 
@@ -152,7 +153,7 @@ class _HomeScreenState extends State<HomeScreen> {
               await picker.pickImage(source: ImageSource.gallery);
 
           if (image != null && mounted) {
-            context.go('/analyze', extra: image); //api로 가도록 수정
+            context.go('/analyze', extra: image);
           }
         } else if (status.isDenied || status.isPermanentlyDenied) {
           ScaffoldMessenger.of(context).showSnackBar(

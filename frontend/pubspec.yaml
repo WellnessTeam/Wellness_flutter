@@ -60,6 +60,8 @@ dependencies:
   shared_preferences: ^2.3.2
   mime: ^1.0.6
   http_parser: ^4.0.2
+  exif: ^3.3.0
+
 
 
 dev_dependencies:
@@ -88,22 +90,25 @@ flutter:
   assets:
     - lib/l10n/
     - assets/images/kakao_login_medium_wide.png
-    - assets/images/wellness.png
     - assets/images/new_rabbit.png
-    - assets/images/breakfast.png
-    - assets/images/lunch.png
-    - assets/images/dinner.png
-    - assets/images/snack.png
     - assets/images/food_icons/chicken.png
-    - assets/images/food_icons/fish.png
-    - assets/images/food_icons/fried-rice.png
-    - assets/images/food_icons/noodle.png
     - assets/images/food_icons/rice-bowl.png
-    - assets/images/food_icons/seafood.png
-    - assets/images/food_icons/spaghetti.png
-    - assets/images/food_icons/steak.png
     - assets/images/food_icons/tteokbokki.png
     - assets/images/food_icons/hot-soup.png
+    - assets/images/food_icons/gimbap.png
+    - assets/images/food_icons/hamburger.png
+    - assets/images/food_icons/cream_spaghetti.png
+    - assets/images/food_icons/pizza.png
+    - assets/images/food_icons/jjajangmyeon.png
+    - assets/images/food_icons/curry.png
+    - assets/images/food_icons/samgyeop.png
+    - assets/images/food_icons/bibimbap.png
+    - assets/images/food_icons/tangsu.png
+    - assets/images/food_icons/jokbal.png
+    - assets/images/food_icons/udon.png
+    - assets/images/food_icons/tonkastu.png
+    - assets/images/food_icons/jjambbong.png
+    - assets/images/food_icons/kimchi.png
     - .env
     # - assets/data/sample.json
     # - assets/data/data_for_record.json

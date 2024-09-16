@@ -15,11 +15,11 @@ import 'package:flutter/services.dart';
 import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart'; // SystemChrome import
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:io';
+import 'package:logger/logger.dart';
 
 class MyHttpOverrides extends HttpOverrides {
   @override
   HttpClient createHttpClient(SecurityContext? context) {
-    // '?'를 추가해서 null safety 확보
     return super.createHttpClient(context)
       ..badCertificateCallback =
           (X509Certificate cert, String host, int port) => true;
@@ -27,6 +27,9 @@ class MyHttpOverrides extends HttpOverrides {
 }
 
 Future<void> main() async {
+  final Logger logger = Logger(); // Logger 인스턴스 생성
+
+  logger.i('App is starting'); // 앱 시작 로그
   WidgetsFlutterBinding.ensureInitialized(); // 플러그인 초기화
 
   // 상태바 스타일 설정
@@ -39,6 +42,7 @@ Future<void> main() async {
   String? kakaoNativeAppKey = dotenv.env['KAKAO_NATIVE_APP_KEY'];
 
   KakaoSdk.init(nativeAppKey: kakaoNativeAppKey);
+  logger.i('Kakao SDK initialized'); // Kakao SDK 초기화 로그
 
   HttpOverrides.global = MyHttpOverrides();
 
@@ -61,7 +65,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primaryColor: const Color(0xff28B0EE),
         useMaterial3: true,
-        scaffoldBackgroundColor: const Color.fromARGB(255, 255, 255, 255),
+        scaffoldBackgroundColor: Colors.transparent,
       ),
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
@@ -72,7 +76,7 @@ class MyApp extends StatelessWidget {
         Locale('en'), // English
         Locale('ko'), // Korean
       ],
-      locale: const Locale('en'), // 기본 로케일 설정
+      locale: const Locale('ko'), // 기본 로케일 설정
     );
   }
 }
@@ -124,10 +128,8 @@ final GoRouter _router = GoRouter(
     GoRoute(
       path: '/home/record',
       builder: (context, state) {
-        final newRecord = state.extra as Map<String, dynamic>?;
-        return RecordScreen(
+        return const RecordScreen(
           isLatestFirst: true, // 기본 정렬 상태
-          newRecord: newRecord, // 새로운 기록 전달
         );
       },
     ),
