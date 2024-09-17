@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:frontend/constants/sizes.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-//import 'dart:convert';
 import 'package:go_router/go_router.dart';
 import 'package:frontend/features/home/views/widgets/nutrition_bar.dart';
 import 'package:frontend/features/home/repos/analyze_repository.dart';
 import 'package:logger/logger.dart';
-import 'package:exif/exif.dart';
 
 class AnalyzePage extends StatefulWidget {
   final XFile image;
@@ -35,36 +33,12 @@ class _AnalyzePageState extends State<AnalyzePage> {
   int recFat = 70;
 
   final AnalyzeRepository analyzeRepository = AnalyzeRepository();
-  final Logger logger = Logger(); // Logger 인스턴스 생성
+  final Logger logger = Logger();
 
   @override
   void initState() {
     super.initState();
-    _extractDateFromImage();
     _uploadImageAndLoadFoodData();
-  }
-
-  // 이미지 메타데이터에서 date를 추출하는 함수
-  Future<void> _extractDateFromImage() async {
-    try {
-      // 이미지 파일을 바이트로 읽기
-      final imageFile = File(widget.image.path);
-      final imageData = await imageFile.readAsBytes();
-
-      // EXIF 정보 추출
-      final tags = await readExifFromBytes(imageData);
-
-      // DateTimeOriginal 키를 통해 메타데이터에서 날짜를 가져옵니다.
-      if (tags.containsKey('EXIF DateTimeOriginal')) {
-        date = tags['EXIF DateTimeOriginal'].toString();
-        logger.i('Extracted Date from metadata: $date');
-        setState(() {});
-      } else {
-        logger.i('No date metadata found in the image.');
-      }
-    } catch (e) {
-      logger.e('Error extracting metadata: $e');
-    }
   }
 
   Future<void> _uploadImageAndLoadFoodData() async {
@@ -79,10 +53,8 @@ class _AnalyzePageState extends State<AnalyzePage> {
       setState(() {
         var wellnessData = jsonData['detail']['wellness_image_info'];
 
-        // `date` 정보 추출 및 로깅
-        //date = wellnessData['date'] ?? "날짜 정보 없음";
-        //logger.i('Extracted Date: $date');
-
+        // API의 date를 사용
+        date = wellnessData['date'] ?? "날짜 정보 없음";
         foodName = wellnessData['category_name'] ?? "음식 정보 없음";
         mealtype = wellnessData['meal_type'] ?? '식사 타입 없음';
         foodKcal = (wellnessData['food_kcal'] ?? 0).toInt();
@@ -102,24 +74,8 @@ class _AnalyzePageState extends State<AnalyzePage> {
     }
   }
 
-  // String determineMealType(DateTime dateTime) {
-  //   final hour = dateTime.hour;
-  //   if (hour >= 6 && hour < 9) {
-  //     return '아침';
-  //   } else if (hour >= 11 && hour < 14) {
-  //     return '점심';
-  //   } else if (hour >= 17 && hour < 20) {
-  //     return '저녁';
-  //   } else {
-  //     return '기타';
-  //   }
-  // }
-
   @override
   Widget build(BuildContext context) {
-    //inal DateTime now = DateTime.now();
-    //final String determinedMealType = determineMealType(now);
-
     return Scaffold(
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(50), // AppBar의 높이를 늘립니다
@@ -242,20 +198,25 @@ class _AnalyzePageState extends State<AnalyzePage> {
                   ),
                 ),
                 ElevatedButton(
-                  onPressed: () {
-                    Map<String, dynamic> newRecord = {
-                      'type': mealtype,
-                      'food': foodName,
-                      'calories': foodKcal,
-                      'carb': foodCarb,
-                      'protein': foodProt,
-                      'fat': foodFat,
-                      'time': DateTime.now().toIso8601String(),
-                    };
+                  onPressed: () async {
+                    try {
+                      // API에 데이터를 저장하고 기록을 가져옵니다.
+                      List<Map<String, dynamic>> mealRecords =
+                          await analyzeRepository.saveAndFetchMealRecords();
 
-                    print('전달될 기록 데이터: $newRecord');
+                      // 로그로 분석 데이터 확인
+                      logger.i('저장된 기록: $mealRecords');
 
-                    context.go('/home/record', extra: newRecord);
+                      // RecordScreen으로 이동하면서 mealRecords 전달
+                      context.go('/home/record', extra: mealRecords);
+                    } catch (e) {
+                      logger.e('기록 저장 중 오류 발생: $e');
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('기록 저장에 실패했습니다. 다시 시도해주세요.'),
+                        ),
+                      );
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                       backgroundColor: const Color.fromARGB(57, 39, 138, 26)),

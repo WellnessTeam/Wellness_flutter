@@ -10,7 +10,8 @@ class KakaoLoginService {
 
   // 인가 코드를 FastAPI로 전달하는 함수
   Future<void> sendAuthCodeToBackend(String authCode) async {
-    var url = 'http://43.202.124.234:8000/api/v1/auth/code/kakao';
+    var url =
+        'http://43.202.124.234:8000/api/v1/oauth/code/kakao'; //redirect url
     // dotenv.env['KAKAO_AUTH_URL'] ?? ''; // .env 파일에서 URL 가져오기(FastAPI 엔드포인트)
     if (url.isEmpty) {
       _logger.e('Kakao auth URL is not set');

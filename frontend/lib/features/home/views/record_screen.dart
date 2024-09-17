@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
-import 'package:frontend/features/home/repos/record_repository.dart';
-import 'package:frontend/features/authentication/view_models/kakao_login.dart';
-import 'package:frontend/features/authentication/views/login_screen.dart';
+import 'package:frontend/features/home/repos/analyze_repository.dart'; // AnalyzeRepository import
 
 class RecordScreen extends StatefulWidget {
   final bool isLatestFirst;
+  final List<Map<String, dynamic>> meals; // meals 매개변수 사용
 
   const RecordScreen({
     super.key,
     required this.isLatestFirst,
+    required this.meals,
   });
 
   @override
@@ -21,22 +20,30 @@ class RecordScreen extends StatefulWidget {
 class _RecordScreenState extends State<RecordScreen> {
   List<Map<String, dynamic>> meals = [];
   var logger = Logger();
-  final RecordRepository _recordRepository = RecordRepository();
+  final AnalyzeRepository _analyzeRepository = AnalyzeRepository();
 
   @override
   void initState() {
     super.initState();
-    _loadMealRecords(); // 데이터를 불러옵니다.
+
+    meals = widget.meals;
+
+    logger.i('전달된 meals: ${widget.meals}');
+
+    // 서버에서 추가 데이터를 가져옵니다.
+    _loadMealRecords();
   }
 
   Future<void> _loadMealRecords() async {
     try {
+      // 첫 번째 API로부터 받은 데이터를 기반으로 두 번째 API 호출
       List<Map<String, dynamic>> fetchedMeals =
-          await _recordRepository.fetchMealRecords(); // 토큰 전달
+          await _analyzeRepository.saveAndFetchMealRecords();
+
       setState(() {
-        meals = fetchedMeals;
+        widget.meals.addAll(fetchedMeals); // 전달된 meals에 새로 가져온 기록 추가
       });
-      logger.i('API로부터 불러온 기록 리스트: $meals');
+      logger.i('API로부터 불러온 기록 리스트: ${widget.meals}');
     } catch (e) {
       logger.e('식사 기록을 불러오는 중 오류 발생: $e');
     }
@@ -86,31 +93,13 @@ class _RecordScreenState extends State<RecordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('기록 화면'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              try {
-                await KakaoLoginService().signOut(); // 카카오 로그아웃 호출
-                // 로그아웃 후 로그인 화면으로 이동
-                context.go(LoginScreen.routeURL);
-              } catch (e) {
-                // 에러 처리
-                print('로그아웃 실패: $e');
-              }
-            },
-          ),
-        ],
-      ),
-      body: meals.isNotEmpty
+      body: widget.meals.isNotEmpty
           ? ListView.builder(
               padding: const EdgeInsets.symmetric(vertical: 16),
-              itemCount: meals.length,
+              itemCount: widget.meals.length,
               itemBuilder: (context, index) {
-                final meal = meals[index];
-                String formattedTime = DateFormat('HH시 mm분 ss초')
+                final meal = widget.meals[index];
+                String formattedTime = DateFormat('yyyy-MM-dd HH:mm:ss')
                     .format(DateTime.parse(meal['time']));
                 String foodImage = _getImageForFood(meal['food']);
 
