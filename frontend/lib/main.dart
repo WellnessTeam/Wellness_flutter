@@ -61,11 +61,10 @@ class MyApp extends StatelessWidget {
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       title: 'Wellness',
-      routerConfig: _router,
       theme: ThemeData(
         primaryColor: const Color(0xff28B0EE),
         useMaterial3: true,
-        scaffoldBackgroundColor: Colors.transparent,
+        scaffoldBackgroundColor: const Color.fromARGB(255, 255, 255, 255),
       ),
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
@@ -77,6 +76,7 @@ class MyApp extends StatelessWidget {
         Locale('ko'), // Korean
       ],
       locale: const Locale('ko'), // 기본 로케일 설정
+      routerConfig: _router, // GoRouter 인스턴스 추가
     );
   }
 }
@@ -128,8 +128,10 @@ final GoRouter _router = GoRouter(
     GoRoute(
       path: '/home/record',
       builder: (context, state) {
-        return const RecordScreen(
-          isLatestFirst: true, // 기본 정렬 상태
+        final mealRecords = state.extra as List<Map<String, dynamic>>;
+        return RecordScreen(
+          isLatestFirst: true,
+          meals: mealRecords,
         );
       },
     ),

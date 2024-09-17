@@ -12,6 +12,8 @@ import 'record_screen.dart';
 import 'package:frontend/features/home/repos/nutrition_repository.dart'; // 리포지토리 추가
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
+import 'package:frontend/features/authentication/view_models/kakao_login.dart';
+import 'package:frontend/features/authentication/views/login_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   static const String routeName = "home";
@@ -101,6 +103,18 @@ class _HomeScreenState extends State<HomeScreen> {
           _isLoading = false; // 오류가 발생해도 로딩 해제
         });
       }
+    }
+  }
+
+  // 로그아웃 처리
+  Future<void> _logout() async {
+    try {
+      await KakaoLoginService().signOut(); // 카카오 로그아웃 호출
+      // 로그아웃 후 로그인 화면으로 이동
+      context.go(LoginScreen.routeURL);
+    } catch (e) {
+      // 에러 처리
+      print('로그아웃 실패: $e');
     }
   }
 
@@ -254,7 +268,10 @@ class _HomeScreenState extends State<HomeScreen> {
                             CircularProgressIndicator(), // 로딩 중일 때 로딩 애니메이션 표시
                       )
                     : _buildHomeScreen(context), // 로딩이 완료되면 홈 화면 표시
-                RecordScreen(isLatestFirst: _isLatestFirst),
+                RecordScreen(
+                  isLatestFirst: _isLatestFirst,
+                  meals: const [],
+                ),
               ],
             ),
           ),
@@ -288,6 +305,26 @@ class _HomeScreenState extends State<HomeScreen> {
             statusBarColor: Colors.white, // 상태바 배경색 고정
             statusBarIconBrightness: Brightness.dark, // 상태바 아이콘 색상 고정
           ),
+          actions: [
+            if (_selectedIndex == 0)
+              GestureDetector(
+                onTap: _logout, // 로그아웃 기능 연결
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16), // 텍스트 간격 조정
+                  child: Center(
+                    child: Text(
+                      "로그아웃",
+                      style: TextStyle(
+                        fontFamily: "pretendard-regular",
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.red, // 로그아웃 텍스트 색상
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
