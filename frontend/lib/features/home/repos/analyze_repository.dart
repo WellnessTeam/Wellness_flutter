@@ -35,8 +35,7 @@ class AnalyzeRepository {
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
 
-      _logger.i('이미지 업로드 응답 코드: ${response.statusCode}');
-      _logger.i('이미지 업로드 응답 본문: ${response.body}');
+      _logger.i('이미지 업로드 응답 코드: ${response.statusCode} / 본문: ${response.body}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         // 응답 데이터를 파싱합니다.
@@ -95,8 +94,8 @@ class AnalyzeRepository {
       }),
     );
 
-    _logger.i('기록 저장 및 가져오기 응답 코드: ${response.statusCode}');
-    _logger.i('기록 저장 및 가져오기 응답 본문: ${response.body}');
+    //_logger.i('기록 저장 및 가져오기 응답 코드: ${response.statusCode}');
+    //_logger.i('기록 저장 및 가져오기 응답 본문: ${response.body}');
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       final data = jsonDecode(response.body);
@@ -104,7 +103,7 @@ class AnalyzeRepository {
 
       _logger.i('기록 저장 및 가져오기 성공: ${mealList.toString()}');
 
-      return mealList.map((meal) {
+      final records = mealList.map((meal) {
         return {
           'type': meal['meal_type_name'],
           'food': meal['category_name'],
@@ -115,6 +114,10 @@ class AnalyzeRepository {
           'time': meal['date'],
         };
       }).toList();
+
+      _logger.i('반환된 기록: $records');
+
+      return records;
     } else {
       _logger.e(
           '기록 저장 및 가져오기 실패: ${response.statusCode} - ${response.reasonPhrase}');

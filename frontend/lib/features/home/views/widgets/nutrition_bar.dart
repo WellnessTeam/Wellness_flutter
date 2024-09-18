@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+// import 'package:logger/logger.dart';
 
 class NutritionBar extends StatefulWidget {
   final String label; // 영양소 이름
@@ -27,10 +28,8 @@ class _NutritionBarState extends State<NutritionBar>
   void initState() {
     super.initState();
 
-    // recommended가 0이 아닐 때만 비율을 계산하고, 아니면 0으로 설정
-    double percentage = widget.recommended > 0
-        ? (widget.intake / widget.recommended).clamp(0.0, 1.0)
-        : 0.0;
+    // 권장량을 넘어도 그대로 비율 계산
+    double percentage = widget.intake / widget.recommended;
 
     _controller = AnimationController(
       vsync: this,
@@ -97,8 +96,9 @@ class _NutritionBarState extends State<NutritionBar>
                     ),
                   ),
                   Container(
-                    width: _animation.value *
-                        constraints.maxWidth, // 애니메이션 값에 비례하여 설정
+                    // 애니메이션 값이 1을 넘어도 제대로 표시되도록 수정
+                    width: (_animation.value <= 1.0 ? _animation.value : 1.0) *
+                        constraints.maxWidth,
                     height: 15, // 바 높이
                     decoration: BoxDecoration(
                       gradient: widget.gradient, // 그라데이션 적용

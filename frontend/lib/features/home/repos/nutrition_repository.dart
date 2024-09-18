@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 
 class NutritionRepository {
   final String apiUrl =
-      'http://43.202.124.234:8000/api/v1/recommend/eaten_nutrient?user_id=1&today=2024-09-04'; // 실제 API URL
+      'http://43.202.124.234:8000/api/v1/recommend/eaten_nutrient?today=2024-08-26'; // 실제 API URL
 
   // 고정된 토큰을 설정
   final String _token = 'test_access_token';
