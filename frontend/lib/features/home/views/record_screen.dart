@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
-import 'package:frontend/features/home/repos/analyze_repository.dart'; // AnalyzeRepository import
+//import 'package:frontend/features/home/repos/analyze_repository.dart'; // AnalyzeRepository import
 
 class RecordScreen extends StatefulWidget {
   final bool isLatestFirst;
@@ -18,35 +18,12 @@ class RecordScreen extends StatefulWidget {
 }
 
 class _RecordScreenState extends State<RecordScreen> {
-  List<Map<String, dynamic>> meals = [];
   var logger = Logger();
-  final AnalyzeRepository _analyzeRepository = AnalyzeRepository();
 
   @override
   void initState() {
     super.initState();
-
-    meals = widget.meals;
-
-    logger.i('전달된 meals: ${widget.meals}');
-
-    // 서버에서 추가 데이터를 가져옵니다.
-    _loadMealRecords();
-  }
-
-  Future<void> _loadMealRecords() async {
-    try {
-      // 첫 번째 API로부터 받은 데이터를 기반으로 두 번째 API 호출
-      List<Map<String, dynamic>> fetchedMeals =
-          await _analyzeRepository.saveAndFetchMealRecords();
-
-      setState(() {
-        widget.meals.addAll(fetchedMeals); // 전달된 meals에 새로 가져온 기록 추가
-      });
-      logger.i('API로부터 불러온 기록 리스트: ${widget.meals}');
-    } catch (e) {
-      logger.e('식사 기록을 불러오는 중 오류 발생: $e');
-    }
+    logger.i('RecordScreen - 전달된 meals: ${widget.meals}');
   }
 
   String _getImageForFood(String food) {
@@ -93,7 +70,7 @@ class _RecordScreenState extends State<RecordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: widget.meals.isNotEmpty
+      body: widget.meals.isNotEmpty // widget.meals 직접 사용
           ? ListView.builder(
               padding: const EdgeInsets.symmetric(vertical: 16),
               itemCount: widget.meals.length,

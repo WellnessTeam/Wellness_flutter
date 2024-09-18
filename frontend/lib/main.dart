@@ -81,9 +81,12 @@ class MyApp extends StatelessWidget {
   }
 }
 
+final Logger logger = Logger();
+
 // GoRouter 설정
 final GoRouter _router = GoRouter(
   initialLocation: LoginScreen.routeURL, // 초기 경로 설정
+
   routes: [
     GoRoute(
       name: LoginScreen.routeName,
@@ -128,7 +131,14 @@ final GoRouter _router = GoRouter(
     GoRoute(
       path: '/home/record',
       builder: (context, state) {
-        final mealRecords = state.extra as List<Map<String, dynamic>>;
+        final mealRecords = (state.extra as List<dynamic>?)
+                ?.map((item) => Map<String, dynamic>.from(item))
+                .toList() ??
+            [];
+
+        // 이 로그가 출력되는지 확인
+        Logger().i('GoRouter에서 전달된 mealRecords: $mealRecords');
+
         return RecordScreen(
           isLatestFirst: true,
           meals: mealRecords,

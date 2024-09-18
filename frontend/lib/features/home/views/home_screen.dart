@@ -350,7 +350,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Gaps.v24,
+          // Gaps.v10,
           Align(
             alignment: Alignment.center,
             child: Text(
