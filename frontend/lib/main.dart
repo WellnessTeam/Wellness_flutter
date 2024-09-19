@@ -118,7 +118,9 @@ final GoRouter _router = GoRouter(
       path: HomeScreen.routeURL, // "/home/:tab"
       builder: (context, state) {
         final tab = state.pathParameters['tab'] ?? 'home'; // 탭 값 가져오기
-        return HomeScreen(tab: tab);
+        return HomeScreen(
+          tab: tab,
+        );
       },
     ),
     GoRoute(
@@ -131,17 +133,8 @@ final GoRouter _router = GoRouter(
     GoRoute(
       path: '/home/record',
       builder: (context, state) {
-        final mealRecords = (state.extra as List<dynamic>?)
-                ?.map((item) => Map<String, dynamic>.from(item))
-                .toList() ??
-            [];
-
-        // 이 로그가 출력되는지 확인
-        Logger().i('GoRouter에서 전달된 mealRecords: $mealRecords');
-
-        return RecordScreen(
+        return const RecordScreen(
           isLatestFirst: true,
-          meals: mealRecords,
         );
       },
     ),

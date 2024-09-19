@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 //import 'package:frontend/features/home/repos/analyze_repository.dart'; // AnalyzeRepository import
 
 class RecordScreen extends StatefulWidget {
   final bool isLatestFirst;
-  final List<Map<String, dynamic>> meals; // meals 매개변수 사용
 
   const RecordScreen({
     super.key,
     required this.isLatestFirst,
-    required this.meals,
   });
 
   @override
@@ -19,11 +18,29 @@ class RecordScreen extends StatefulWidget {
 
 class _RecordScreenState extends State<RecordScreen> {
   var logger = Logger();
+  List<Map<String, dynamic>> meals = []; // 화면에 표시할 데이터를 저장할 리스트
 
   @override
-  void initState() {
-    super.initState();
-    logger.i('RecordScreen - 전달된 meals: ${widget.meals}');
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // 전달된 데이터를 초기화합니다.
+    final Object? extraData =
+        GoRouter.of(context).routerDelegate.currentConfiguration.extra;
+    logger.i(
+        'Data received in RecordScreen: ${extraData.runtimeType}'); // 데이터 타입 확인
+
+    if (extraData is List<Map<String, dynamic>>) {
+      setState(() {
+        meals = extraData;
+      });
+      logger.i('RecordScreen - 전달된 기록 데이터: $meals');
+    } else {
+      logger.w('No valid data received for records');
+      setState(() {
+        meals = []; // 빈 리스트로 설정
+      });
+    }
   }
 
   String _getImageForFood(String food) {
@@ -69,13 +86,15 @@ class _RecordScreenState extends State<RecordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    logger.i('RecordScreen - 표시할 meals: $meals');
+
     return Scaffold(
-      body: widget.meals.isNotEmpty // widget.meals 직접 사용
-          ? ListView.builder(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              itemCount: widget.meals.length,
+      body: meals.isEmpty
+          ? const Center(child: Text('오늘의 기록을 추가해보세요!'))
+          : ListView.builder(
+              itemCount: meals.length,
               itemBuilder: (context, index) {
-                final meal = widget.meals[index];
+                final meal = meals[index];
                 String formattedTime = DateFormat('yyyy-MM-dd HH:mm:ss')
                     .format(DateTime.parse(meal['time']));
                 String foodImage = _getImageForFood(meal['food']);
@@ -159,12 +178,7 @@ class _RecordScreenState extends State<RecordScreen> {
                   ),
                 );
               },
-            )
-          : const Center(
-              child: Text(
-              '오늘의 기록을 추가해보세요!',
-              style: TextStyle(fontFamily: "pretendard-regular", fontSize: 18),
-            )),
+            ),
     );
   }
 }

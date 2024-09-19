@@ -71,7 +71,7 @@ class _NutritionBarState extends State<NutritionBar>
               ),
               // 섭취 / 권장 (비율%) 텍스트 표시
               Text(
-                "${widget.intake.toStringAsFixed(0)} / ${widget.recommended.toStringAsFixed(0)} (${(_animation.value * 100).toStringAsFixed(0)}%)",
+                "${widget.intake.toStringAsFixed(0)} / ${widget.recommended.toStringAsFixed(0)} g (${(_animation.value * 100).toStringAsFixed(0)}%)",
                 style: const TextStyle(
                   fontFamily: "pretendart-regular",
                   fontSize: 16,

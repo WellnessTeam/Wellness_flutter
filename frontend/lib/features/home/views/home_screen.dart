@@ -270,7 +270,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     : _buildHomeScreen(context), // 로딩이 완료되면 홈 화면 표시
                 RecordScreen(
                   isLatestFirst: _isLatestFirst,
-                  meals: const [],
                 ),
               ],
             ),
