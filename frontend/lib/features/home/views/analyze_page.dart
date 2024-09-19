@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/constants/sizes.dart';
-import 'package:frontend/features/home/views/record_screen.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:go_router/go_router.dart';
@@ -70,11 +69,11 @@ class _AnalyzePageState extends State<AnalyzePage> {
 
         _isLoading = false;
 
-        logger.i(
-            'foodKcal : $foodKcal / foodCarb: $foodCarb / foodProt : $foodProt / foodFat : $foodFat ');
+        // logger.i(
+        //     'foodKcal : $foodKcal / foodCarb: $foodCarb / foodProt : $foodProt / foodFat : $foodFat ');
 
-        logger.i(
-            'recKcal : $recKcal / recCarb : $recCarb / recProt : $recProt / recFat : $recFat ');
+        // logger.i(
+        //     'recKcal : $recKcal / recCarb : $recCarb / recProt : $recProt / recFat : $recFat ');
       });
     } catch (e) {
       logger.e('API 데이터를 불러오는 중 오류 발생(analyze): $e'); // 오류 로그
@@ -215,18 +214,19 @@ class _AnalyzePageState extends State<AnalyzePage> {
                         ),
                       ),
                       ElevatedButton(
+                        // AnalyzePage에서 '완료' 버튼의 onPressed 콜백
                         onPressed: () async {
                           try {
-                            final mealRecords = await analyzeRepository
-                                .saveAndFetchMealRecords();
+                            // 저장 및 기록 데이터 가져오기
+                            final List<Map<String, dynamic>> records =
+                                await analyzeRepository
+                                    .saveAndFetchMealRecords();
+                            logger.i(
+                                'Records to be sent to RecordScreen: $records'); // 데이터 확인용 로그
 
-                            if (mealRecords.isNotEmpty) {
-                              logger.i('AnalyzePage - 저장된 기록: $mealRecords');
-
-                              // GoRouter를 사용하여 RecordScreen으로 이동하면서 데이터 전달
-                              context.go('/home/record', extra: mealRecords);
-                            } else {
-                              logger.e('받아온 기록이 비어있습니다.');
+                            if (mounted) {
+                              // 데이터를 RecordScreen으로 전달하며 네비게이션
+                              context.go('/home/record', extra: records);
                             }
                           } catch (e) {
                             logger.e('기록 저장 중 오류 발생: $e');

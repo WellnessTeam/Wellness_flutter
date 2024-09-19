@@ -18,7 +18,7 @@ class AnalyzeRepository {
 
   Map<String, dynamic>? analysisData;
 
-  // 첫 번째 API에 이미지 업로드 및 데이터 가져오기
+  // 첫 번째 API에 이미지 업로드 및 데이터 가져오기(분석화면)
   Future<Map<String, dynamic>> uploadImageAndFetchData(File image) async {
     final mimeType = lookupMimeType(image.path) ?? 'application/octet-stream';
 
@@ -64,7 +64,7 @@ class AnalyzeRepository {
     }
   }
 
-  // 두 번째 API로 데이터 전송 및 기록 가져오기
+  // 두 번째 API로 데이터 전송 및 기록 가져오기(기록화면)
   Future<List<Map<String, dynamic>>> saveAndFetchMealRecords() async {
     if (analysisData == null) {
       _logger.w('분석 데이터가 없습니다.');

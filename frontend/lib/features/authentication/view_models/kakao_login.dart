@@ -8,34 +8,34 @@ import 'package:flutter/services.dart';
 class KakaoLoginService {
   final Logger _logger = Logger();
 
-  // 인가 코드를 FastAPI로 전달하는 함수
-  Future<void> sendAuthCodeToBackend(String authCode) async {
-    var url =
-        'http://43.202.124.234:8000/api/v1/oauth/code/kakao'; //redirect url
-    // dotenv.env['KAKAO_AUTH_URL'] ?? ''; // .env 파일에서 URL 가져오기(FastAPI 엔드포인트)
-    if (url.isEmpty) {
-      _logger.e('Kakao auth URL is not set');
-      return;
-    }
+  // // 인가 코드를 FastAPI로 전달하는 함수
+  // Future<void> sendAuthCodeToBackend(String authCode) async {
+  //   var url =
+  //       'http://43.202.124.234:8000/api/v1/oauth/code/kakao'; //redirect url
+  //   // dotenv.env['KAKAO_AUTH_URL'] ?? ''; // .env 파일에서 URL 가져오기(FastAPI 엔드포인트)
+  //   if (url.isEmpty) {
+  //     _logger.e('Kakao auth URL is not set');
+  //     return;
+  //   }
 
-    final response = await http.post(
-      Uri.parse(url),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({
-        'code': authCode, // 받은 authorization code
-      }),
-    );
+  //   final response = await http.post(
+  //     Uri.parse(url),
+  //     headers: {
+  //       'Content-Type': 'application/json',
+  //     },
+  //     body: jsonEncode({
+  //       'code': authCode, // 받은 authorization code
+  //     }),
+  //   );
 
-    if (response.statusCode == 200) {
-      _logger.i('Authorization code sent to backend successfully');
-      _logger.i('Response from server: ${response.body}');
-    } else {
-      _logger
-          .e('Failed to send authorization code to backend: ${response.body}');
-    }
-  }
+  //   if (response.statusCode == 200) {
+  //     _logger.i('Authorization code sent to backend successfully');
+  //     _logger.i('Response from server: ${response.body}');
+  //   } else {
+  //     _logger
+  //         .e('Failed to send authorization code to backend: ${response.body}');
+  //   }
+  // }
 
   // 카카오 로그인 로직
   Future<Map<String, String?>> signInWithKakao() async {
@@ -54,16 +54,16 @@ class KakaoLoginService {
       }
 
       // 결과를 저장할 변수들
-      bool authCodeSent = false;
+      //bool authCodeSent = false;
       User? user;
 
       // 두 작업을 개별적으로 실행하고 각각의 결과를 처리
       await Future.wait([
-        sendAuthCodeToBackend(token.accessToken).then((_) {
-          authCodeSent = true;
-        }).catchError((error) {
-          _logger.e('Authorization code sending failed: $error');
-        }),
+        // sendAuthCodeToBackend(token.accessToken).then((_) {
+        //   authCodeSent = true;
+        // }).catchError((error) {
+        //   _logger.e('Authorization code sending failed: $error');
+        // }),
         UserApi.instance.me().then((fetchedUser) {
           user = fetchedUser;
         }).catchError((error) {
@@ -71,10 +71,10 @@ class KakaoLoginService {
         }),
       ]);
 
-      // 작업 결과 확인
-      if (!authCodeSent) {
-        _logger.e('Failed to send authorization code to the backend.');
-      }
+      // // 작업 결과 확인
+      // if (!authCodeSent) {
+      //   _logger.e('Failed to send authorization code to the backend.');
+      // }
 
       if (user == null) {
         _logger.e('Failed to fetch user info from Kakao.');
