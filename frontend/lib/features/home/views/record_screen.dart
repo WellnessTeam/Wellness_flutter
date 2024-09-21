@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/features/home/repos/analyze_repository.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
@@ -21,8 +22,8 @@ class _RecordScreenState extends State<RecordScreen> {
   List<Map<String, dynamic>> meals = []; // 화면에 표시할 데이터를 저장할 리스트
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
+  void initState() {
+    super.initState();
 
     // 전달된 데이터를 초기화합니다.
     final Object? extraData =
@@ -31,15 +32,27 @@ class _RecordScreenState extends State<RecordScreen> {
         'Data received in RecordScreen: ${extraData.runtimeType}'); // 데이터 타입 확인
 
     if (extraData is List<Map<String, dynamic>>) {
-      setState(() {
-        meals = extraData;
-      });
+      meals = extraData; // 초기 데이터 설정
       logger.i('RecordScreen - 전달된 기록 데이터: $meals');
     } else {
-      logger.w('No valid data received for records');
+      logger.i('No new data received. Fetching data from the database.');
+      // 데이터베이스에서 기록 가져오기
+      _fetchDataFromDatabase();
+    }
+  }
+
+// 데이터베이스에서 기록을 가져오는 메서드
+  Future<void> _fetchDataFromDatabase() async {
+    try {
+      // 여기에 데이터베이스에서 기록을 가져오는 로직을 추가합니다.
+      // 예시로 AnalyzeRepository를 통해 데이터를 가져온다고 가정합니다.
+      final mealRecords = await AnalyzeRepository().fetchPreviousRecords();
       setState(() {
-        meals = []; // 빈 리스트로 설정
+        meals = mealRecords;
       });
+      logger.i('Database records fetched: $meals');
+    } catch (e) {
+      logger.e('Failed to fetch records from database: $e');
     }
   }
 

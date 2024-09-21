@@ -1,43 +1,14 @@
+import 'package:frontend/features/authentication/repos/token_storage.dart';
 import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart';
 import 'package:logger/logger.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-//import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class KakaoLoginService {
   final Logger _logger = Logger();
 
-  // // 인가 코드를 FastAPI로 전달하는 함수
-  // Future<void> sendAuthCodeToBackend(String authCode) async {
-  //   var url =
-  //       'http://43.202.124.234:8000/api/v1/oauth/code/kakao'; //redirect url
-  //   // dotenv.env['KAKAO_AUTH_URL'] ?? ''; // .env 파일에서 URL 가져오기(FastAPI 엔드포인트)
-  //   if (url.isEmpty) {
-  //     _logger.e('Kakao auth URL is not set');
-  //     return;
-  //   }
-
-  //   final response = await http.post(
-  //     Uri.parse(url),
-  //     headers: {
-  //       'Content-Type': 'application/json',
-  //     },
-  //     body: jsonEncode({
-  //       'code': authCode, // 받은 authorization code
-  //     }),
-  //   );
-
-  //   if (response.statusCode == 200) {
-  //     _logger.i('Authorization code sent to backend successfully');
-  //     _logger.i('Response from server: ${response.body}');
-  //   } else {
-  //     _logger
-  //         .e('Failed to send authorization code to backend: ${response.body}');
-  //   }
-  // }
-
-  // 카카오 로그인 로직
+  // 카카오 로그인
   Future<Map<String, String?>> signInWithKakao() async {
     _logger.d("카카오 로그인 시도");
 
@@ -46,68 +17,83 @@ class KakaoLoginService {
       if (await isKakaoTalkInstalled()) {
         // 카카오톡으로 로그인
         token = await UserApi.instance.loginWithKakaoTalk();
-        _logger.i('카카오톡으로 로그인 성공');
+        _logger.i('카카오톡으로 로그인 성공, token: ${token.accessToken}');
       } else {
         // 카카오 계정으로 로그인
         token = await UserApi.instance.loginWithKakaoAccount();
-        _logger.i('카카오계정으로 로그인 성공');
+        _logger.i('카카오계정으로 로그인 성공, token: ${token.accessToken}');
       }
 
-      // 결과를 저장할 변수들
-      //bool authCodeSent = false;
-      User? user;
+      // 사용자 정보 가져오기
+      User? user = await UserApi.instance.me();
+      String? nickname = user.kakaoAccount?.profile?.nickname;
+      String? email = user.kakaoAccount?.email;
 
-      // 두 작업을 개별적으로 실행하고 각각의 결과를 처리
-      await Future.wait([
-        // sendAuthCodeToBackend(token.accessToken).then((_) {
-        //   authCodeSent = true;
-        // }).catchError((error) {
-        //   _logger.e('Authorization code sending failed: $error');
-        // }),
-        UserApi.instance.me().then((fetchedUser) {
-          user = fetchedUser;
-        }).catchError((error) {
-          _logger.e('Failed to fetch user info: $error');
-        }),
-      ]);
-
-      // // 작업 결과 확인
-      // if (!authCodeSent) {
-      //   _logger.e('Failed to send authorization code to the backend.');
-      // }
-
-      if (user == null) {
+      if (nickname == null || email == null) {
         _logger.e('Failed to fetch user info from Kakao.');
-        return {
-          'nickname': null,
-          'email': null,
-        };
+        return {'nickname': null, 'email': null};
       }
 
-      // 사용자 정보 추출
-      String? nickname = user?.kakaoAccount?.profile?.nickname;
-      String? email = user?.kakaoAccount?.email;
-      _logger.i('사용자 정보: 닉네임 - $nickname, 이메일 - $email');
-
-      return {
-        'nickname': nickname,
-        'email': email,
-      };
+      _logger.i('Kakao login successful, nickname: $nickname, email: $email');
+      return {'nickname': nickname, 'email': email};
     } catch (error) {
       _logger.e('카카오 로그인 실패: $error');
-      if (error is PlatformException && error.code == 'CANCELED') {
-        _logger.w('사용자가 로그인 취소');
-      }
-      return {
-        'nickname': null,
-        'email': null,
-      };
+      return {'nickname': null, 'email': null};
     }
   }
 
-  // 로그아웃
+  // 로그인 API 호출
+  Future<bool> loginToBackend(String nickname, String email) async {
+    try {
+      final response = await http.post(
+        Uri.parse('http://43.202.124.234:8000/api/v1/user/login'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'nickname': nickname,
+          'email': email,
+        }),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        final accessToken = data['detail']['wellness_info']['access_token'];
+        final refreshToken = data['detail']['wellness_info']['refresh_token'];
+
+        // 엑세스 토큰저장
+        await TokenStorage.updateTokensIfNeeded(accessToken, refreshToken);
+        _logger.i(
+            'Tokens are saved successfully: Acess : $accessToken / Refresh : $refreshToken');
+        return true;
+      } else {
+        _logger.e('Failed to login: ${response.body}');
+        return false;
+      }
+    } catch (error) {
+      _logger.e('Error logging in: $error');
+      return false;
+    }
+  }
+
+  // 로컬 저장소에 토큰이 존재하는지 확인하는 메서드
+  Future<bool> hasValidToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    String? storedToken = prefs.getString('access_token');
+    return storedToken != null;
+  }
+
+  // 로그아웃 로직 (토큰은 삭제하지 않음)
   Future<void> signOut() async {
-    await UserApi.instance.logout();
-    _logger.i('카카오 로그아웃 성공');
+    try {
+      await UserApi.instance.logout(); // 카카오 로그아웃 호출
+      _logger.i('카카오 로그아웃 성공');
+
+      // 토큰을 남겨두고, 로그아웃 상태만 처리
+      _logger.i('Token remains in local storage');
+    } catch (e) {
+      _logger.e('카카오 로그아웃 실패: $e');
+      throw Exception('로그아웃 실패');
+    }
   }
 }
