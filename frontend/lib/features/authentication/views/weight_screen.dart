@@ -3,7 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/constants/gaps.dart';
 import 'package:frontend/constants/sizes.dart';
-import 'package:frontend/features/authentication/view_models/signup_view_model.dart';
+import 'package:frontend/features/authentication/view_models/kakao_signup.dart';
+import 'package:frontend/features/authentication/view_models/signup_view_model.dart'; // 회원가입 API 호출을 위해 필요
 import 'package:frontend/features/authentication/views/widgets/form_button.dart';
 import 'package:frontend/features/authentication/views/widgets/status_bar.dart';
 import 'package:frontend/features/home/views/home_screen.dart';
@@ -63,23 +64,51 @@ class _WeightScreenState extends ConsumerState<WeightScreen> {
     }
   }
 
-  void _onNextTap() {
+// 회원가입 API 호출 로직 추가
+  void _onNextTap() async {
     final weight = "${_integerController.text}.${_decimalController.text}";
     var logger = Logger();
 
+    // 회원가입 폼 데이터에 체중 추가
     ref.read(signUpForm.notifier).state = {
       ...ref.read(signUpForm.notifier).state,
       "weight": weight,
     };
 
-    logger.i('${ref.read(signUpForm)}');
-    // print("SignUp Form Data: ${ref.read(signUpForm)}");
+    logger.i('회원가입 데이터: ${ref.read(signUpForm)}');
 
-    // 'home' 탭으로 이동하도록 설정
-    context.goNamed(
-      HomeScreen.routeName,
-      pathParameters: {'tab': 'home'}, // 여기서 'tab' 값을 명시적으로 전달
-    );
+    // KakaoSignupService 인스턴스 생성
+    final kakaoSignupService = KakaoSignupService();
+
+    try {
+      // 회원가입 API 호출 로그 추가
+      logger.i('회원가입 API 호출 중...');
+      final success = await kakaoSignupService.signupWithAdditionalInfo(
+        ref.read(signUpForm.notifier).state['nickname'],
+        ref.read(signUpForm.notifier).state['email'],
+        ref.read(signUpForm.notifier).state['birthday'],
+        ref.read(signUpForm.notifier).state['gender'],
+        ref.read(signUpForm.notifier).state['height'],
+        weight, // 체중 정보 추가
+      );
+
+      if (success) {
+        // 회원가입 성공 로그 추가
+        logger.i('회원가입 성공');
+        // 회원가입 성공 시 홈 화면으로 이동
+        context.goNamed(
+          HomeScreen.routeName,
+          pathParameters: {'tab': 'home'}, // 'home' 탭으로 이동
+        );
+      } else {
+        // 회원가입 실패 로그 추가
+        logger.e('회원가입 실패');
+        // 실패 시 처리할 로직 추가 가능
+      }
+    } catch (e) {
+      // 예외 처리 로그 추가
+      logger.e('회원가입 중 에러 발생: $e');
+    }
   }
 
   void _onIntegerChanged(String value) {
@@ -235,7 +264,7 @@ class _WeightScreenState extends ConsumerState<WeightScreen> {
                 disabled: _integerController.text.isEmpty ||
                     _decimalController.text.isEmpty ||
                     _errorMessage != null,
-                text: "Finish",
+                text: "웰니스 시작하기",
               ),
             ),
           ],

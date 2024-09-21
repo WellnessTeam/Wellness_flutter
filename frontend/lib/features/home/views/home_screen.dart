@@ -13,7 +13,7 @@ import 'package:frontend/features/home/repos/nutrition_repository.dart'; // ë¦¬í
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
 import 'package:frontend/features/authentication/view_models/kakao_login.dart';
-import 'package:frontend/features/authentication/views/login_screen.dart';
+import 'package:frontend/features/home/views/login_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   static const String routeName = "home";

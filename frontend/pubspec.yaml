@@ -61,6 +61,7 @@ dependencies:
   mime: ^1.0.6
   http_parser: ^4.0.2
   exif: ^3.3.0
+  flutter_native_splash: ^2.4.1
 
 
 
@@ -90,7 +91,9 @@ flutter:
   assets:
     - lib/l10n/
     - assets/images/kakao_login_medium_wide.png
+    - assets/images/kakao_signup.png
     - assets/images/new_rabbit.png
+    - assets/images/wellness_background.png
     - assets/images/food_icons/chicken.png
     - assets/images/food_icons/rice-bowl.png
     - assets/images/food_icons/tteokbokki.png
