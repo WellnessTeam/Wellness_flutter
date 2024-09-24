@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:mime/mime.dart';
 import 'package:http_parser/http_parser.dart';
@@ -6,12 +7,13 @@ import 'dart:convert';
 import 'package:logger/logger.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // SharedPreferences import
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:path/path.dart' as path;
+import 'package:flutter/material.dart';
 
 class AnalyzeRepository {
-  final String apiUrl =
-      'http://43.202.124.234:8000/api/v1/model/predict'; // 분석 화면 API
-  final String saveUrl =
-      'http://43.202.124.234:8000/api/v1/history/save_and_get'; // 기록 화면 API
+  final String apiUrl = dotenv.env['ANALYZE_API_URL'] ?? ''; // 분석 화면 API
+  final String saveUrl = dotenv.env['HISTORY_API_URL'] ?? ''; // 기록 화면 API
 
   final Logger _logger = Logger(); // Logger 인스턴스 생성
 
@@ -24,10 +26,21 @@ class AnalyzeRepository {
   }
 
   // 첫 번째 API에 이미지 업로드 및 데이터 가져오기(분석화면)
-  Future<Map<String, dynamic>> uploadImageAndFetchData(File image) async {
+  Future<Map<String, dynamic>> uploadImageAndFetchData(
+      File image, BuildContext context) async {
     final token = await _getToken(); // 저장된 토큰을 가져옴
     if (token == null) {
       throw Exception('No token found'); // 토큰이 없을 때 예외 처리
+    }
+
+    // 파일 확장자 확인
+    String fileExtension = path.extension(image.path).toLowerCase();
+    if (!(fileExtension == '.jpg' ||
+        fileExtension == '.jpeg' ||
+        fileExtension == '.png')) {
+      // 확장자가 맞지 않으면 팝업 띄우기
+      _showInvalidFileExtensionDialog(context);
+      return Future.error('Invalid file extension');
     }
 
     final mimeType = lookupMimeType(image.path) ?? 'application/octet-stream';
@@ -74,8 +87,35 @@ class AnalyzeRepository {
     }
   }
 
-  // 두 번째 API로 데이터 전송 및 기록 가져오기(기록화면)
-  Future<List<Map<String, dynamic>>> saveAndFetchMealRecords() async {
+// 잘못된 파일 확장자일 때 팝업 띄우기
+  void _showInvalidFileExtensionDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text(
+            '파일 업로드 실패',
+          ),
+          content: const Text(
+            '파일 형식을 확인해주세요. \nJPG, JPEG 또는 PNG 형식의 파일만 업로드할 수 있어요.',
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                context.go('/home/home');
+              },
+              child: const Text('확인'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+// 두 번째 API로 데이터 전송 및 기록 가져오기(기록화면)
+  Future<List<Map<String, dynamic>>> saveAndFetchMealRecords(
+      BuildContext context) async {
     if (analysisData == null) {
       _logger.w('분석 데이터가 없습니다.');
       throw Exception('분석 데이터가 없습니다.');
@@ -94,6 +134,19 @@ class AnalyzeRepository {
     DateTime parsedDate = DateFormat('yyyy:MM:dd HH:mm:ss').parse(originalDate);
     // 서버에서 기대하는 형식으로 변환
     String formattedDate = DateFormat('yyyy-MM-dd HH:mm:ss').format(parsedDate);
+
+    // 현재 날짜와 분석 데이터의 날짜를 비교
+    DateTime today = DateTime.now();
+    String todayDateString =
+        DateFormat('yyyy-MM-dd').format(today); // 오늘 날짜 문자열로 변환
+    String analysisDateString =
+        DateFormat('yyyy-MM-dd').format(parsedDate); // 분석 날짜 문자열로 변환
+
+    // 날짜가 다르면 팝업 띄우기
+    if (todayDateString != analysisDateString) {
+      _showDateErrorDialog(context); // 팝업 함수 호출
+      return Future.error('사진은 오늘 날짜여야 합니다.');
+    }
 
     final response = await http.post(
       Uri.parse(saveUrl), // 두 번째 API URL
@@ -135,6 +188,32 @@ class AnalyzeRepository {
           '기록 저장 및 가져오기 실패: ${response.statusCode} - ${response.reasonPhrase}');
       throw Exception('기록 저장 및 가져오기 실패');
     }
+  }
+
+// 날짜가 오늘이 아닐 때 팝업을 띄우는 함수
+  void _showDateErrorDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text(
+            '오늘 드신 음식인가요?',
+          ),
+          content: const Text(
+            '아직은 오늘 먹은 음식만 업로드할 수 있어요',
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                context.go('/home/home');
+              },
+              child: const Text('확인'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   // 서버에서 기존 기록만 가져오기

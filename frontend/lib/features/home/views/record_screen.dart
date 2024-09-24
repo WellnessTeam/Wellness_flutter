@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/features/home/repos/analyze_repository.dart';
-import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
-//import 'package:frontend/features/home/repos/analyze_repository.dart'; // AnalyzeRepository import
+import 'package:intl/intl.dart';
+import 'package:frontend/features/home/providers/token_manager.dart';
+import 'package:frontend/features/home/repos/record_repository.dart'; // RecordRepository import
 
 class RecordScreen extends StatefulWidget {
   final bool isLatestFirst;
@@ -20,39 +19,39 @@ class RecordScreen extends StatefulWidget {
 class _RecordScreenState extends State<RecordScreen> {
   var logger = Logger();
   List<Map<String, dynamic>> meals = []; // 화면에 표시할 데이터를 저장할 리스트
+  bool _isLoading = true; // 데이터 로딩 상태를 나타내는 변수
 
   @override
   void initState() {
     super.initState();
 
-    // 전달된 데이터를 초기화합니다.
-    final Object? extraData =
-        GoRouter.of(context).routerDelegate.currentConfiguration.extra;
-    logger.i(
-        'Data received in RecordScreen: ${extraData.runtimeType}'); // 데이터 타입 확인
-
-    if (extraData is List<Map<String, dynamic>>) {
-      meals = extraData; // 초기 데이터 설정
-      logger.i('RecordScreen - 전달된 기록 데이터: $meals');
-    } else {
-      logger.i('No new data received. Fetching data from the database.');
-      // 데이터베이스에서 기록 가져오기
-      _fetchDataFromDatabase();
-    }
+    final tokenManager = TokenManager(context: context);
+    tokenManager.refreshToken().then((_) {
+      _fetchAllRecords(); // 모든 기록 불러오기
+    });
   }
 
-// 데이터베이스에서 기록을 가져오는 메서드
-  Future<void> _fetchDataFromDatabase() async {
+  // RecordRepository의 fetchMealRecords API를 호출하는 메서드
+  Future<void> _fetchAllRecords() async {
     try {
-      // 여기에 데이터베이스에서 기록을 가져오는 로직을 추가합니다.
-      // 예시로 AnalyzeRepository를 통해 데이터를 가져온다고 가정합니다.
-      final mealRecords = await AnalyzeRepository().fetchPreviousRecords();
+      logger.i('기록을 가져오는 중입니다...');
+      // RecordRepository를 통해 기록을 가져옴
+      final mealRecords = await RecordRepository().fetchMealRecords();
       setState(() {
         meals = mealRecords;
+        _isLoading = false; // 로딩 상태 해제
       });
-      logger.i('Database records fetched: $meals');
+
+      if (meals.isEmpty) {
+        logger.i('기록이 없습니다.');
+      } else {
+        logger.i('모든 기록 불러옴: $meals');
+      }
     } catch (e) {
-      logger.e('Failed to fetch records from database: $e');
+      logger.e('데이터베이스에서 기록을 가져오는 중 오류 발생: $e');
+      setState(() {
+        _isLoading = false; // 오류 시에도 로딩 상태 해제
+      });
     }
   }
 
@@ -72,7 +71,7 @@ class _RecordScreenState extends State<RecordScreen> {
         return 'assets/images/food_icons/curry.png';
       case '우동':
         return 'assets/images/food_icons/udon.png';
-      case '돈까스':
+      case '돈가스':
         return 'assets/images/food_icons/tonkastu.png';
       case '짬뽕':
         return 'assets/images/food_icons/jjambbong.png';
@@ -102,96 +101,99 @@ class _RecordScreenState extends State<RecordScreen> {
     logger.i('RecordScreen - 표시할 meals: $meals');
 
     return Scaffold(
-      body: meals.isEmpty
-          ? const Center(child: Text('오늘의 기록을 추가해보세요!'))
-          : ListView.builder(
-              itemCount: meals.length,
-              itemBuilder: (context, index) {
-                final meal = meals[index];
-                String formattedTime = DateFormat('yyyy-MM-dd HH:mm:ss')
-                    .format(DateTime.parse(meal['time']));
-                String foodImage = _getImageForFood(meal['food']);
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator()) // 로딩 상태 시 표시
+          : meals.isEmpty
+              ? const Center(child: Text('오늘의 기록을 추가해보세요!')) // 기록이 없을 때 메시지 표시
+              : ListView.builder(
+                  itemCount: meals.length,
+                  itemBuilder: (context, index) {
+                    final meal = meals[index];
+                    String formattedTime = DateFormat('yyyy-MM-dd HH:mm:ss')
+                        .format(DateTime.parse(meal['time']));
+                    String foodImage = _getImageForFood(meal['food']);
 
-                return Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Card(
-                        margin: const EdgeInsets.symmetric(vertical: 8),
-                        color: Colors.green[50],
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      meal['type'],
-                                      style: const TextStyle(
-                                          fontFamily: "myfonts",
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold),
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 4),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Card(
+                            margin: const EdgeInsets.symmetric(vertical: 8),
+                            color: Colors.green[50],
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          meal['type'],
+                                          style: const TextStyle(
+                                              fontFamily: "myfonts",
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.bold),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text("음식명 : ${meal['food']}",
+                                            style: const TextStyle(
+                                              fontFamily: "pretendard-regular",
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                            )),
+                                        Text("칼로리 : ${meal['calories']} kcal",
+                                            style: const TextStyle(
+                                              fontFamily: "pretendard-regular",
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                            )),
+                                        Text(
+                                            "탄수화물 : ${meal['carb']}g / 단백질 : ${meal['protein']}g / 지방 : ${meal['fat']}g",
+                                            style: const TextStyle(
+                                              fontFamily: "pretendard-regular",
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                            )),
+                                      ],
                                     ),
-                                    const SizedBox(height: 8),
-                                    Text("음식명 : ${meal['food']}",
-                                        style: const TextStyle(
-                                          fontFamily: "pretendard-regular",
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                        )),
-                                    Text("칼로리 : ${meal['calories']} kcal",
-                                        style: const TextStyle(
-                                          fontFamily: "pretendard-regular",
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                        )),
-                                    Text(
-                                        "탄수화물 : ${meal['carb']}g / 단백질 : ${meal['protein']}g / 지방 : ${meal['fat']}g",
-                                        style: const TextStyle(
-                                          fontFamily: "pretendard-regular",
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                        )),
-                                  ],
-                                ),
-                              ),
-                              Align(
-                                alignment: Alignment.topRight,
-                                child: SizedBox(
-                                  width: 66,
-                                  height: 66,
-                                  child: Image.asset(
-                                    foodImage,
-                                    fit: BoxFit.contain,
                                   ),
-                                ),
+                                  Align(
+                                    alignment: Alignment.topRight,
+                                    child: SizedBox(
+                                      width: 66,
+                                      height: 66,
+                                      child: Image.asset(
+                                        foodImage,
+                                        fit: BoxFit.contain,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
+                            ),
                           ),
-                        ),
-                      ),
-                      const SizedBox(height: 1),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: Text(
-                          "기록 시간: $formattedTime",
-                          style: const TextStyle(
-                            fontFamily: "pretendard-regular",
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
+                          const SizedBox(height: 1),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: Text(
+                              "기록 시간: $formattedTime",
+                              style: const TextStyle(
+                                fontFamily: "pretendard-regular",
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ),
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
-                );
-              },
-            ),
+                    );
+                  },
+                ),
     );
   }
 }

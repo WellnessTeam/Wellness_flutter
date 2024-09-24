@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class NutritionRepository {
   final String apiUrl =
-      'http://43.202.124.234:8000/api/v1/recommend/eaten_nutrient'; // 실제 API URL
+      dotenv.env['HOME_SCREEN_API_URL'] ?? ''; // Home 화면 API URL
 
   // 토큰을 SharedPreferences에서 가져와 사용하는 메서드
   Future<String?> _getToken() async {

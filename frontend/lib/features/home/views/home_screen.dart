@@ -13,7 +13,8 @@ import 'package:frontend/features/home/repos/nutrition_repository.dart'; // 리�
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
 import 'package:frontend/features/authentication/view_models/kakao_login.dart';
-import 'package:frontend/features/home/views/login_screen.dart';
+import 'package:frontend/features/authentication/views/login_screen.dart';
+import 'package:frontend/features/home/providers/token_manager.dart';
 
 class HomeScreen extends StatefulWidget {
   static const String routeName = "home";
@@ -34,7 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
   double intakeRatio = 0.0;
   final List<String> tabs = ["home", "record"];
   Map<String, dynamic> jsonData = {
-    'nickname': '이름', // 기본 닉네임
+    'user_nickname': '이름', // 기본 닉네임
     'total_kcal': 0, // 기본 섭취 칼로리
     'rec_kcal': 2000, // 기본 권장 칼로리
     'total_car': 0, // 기본 탄수화물 섭취
@@ -58,7 +59,13 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _selectedIndex = _getIndexFromTab(widget.tab);
-    _loadNutritionData(); // 데이터를 로드
+
+    // tokenManager 인스턴스 생성
+    final tokenManager = TokenManager(context: context);
+
+    tokenManager.refreshToken().then((_) {
+      _loadNutritionData(); // 데이터를 로드
+    });
 
     // 5초 후 로딩을 중단하고 기본 값을 보여주도록 설정
     Future.delayed(const Duration(seconds: 5), () {
@@ -83,6 +90,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (mounted) {
         setState(() {
           jsonData = {
+            'user_nickname': detail['user_nickname'] ?? "이름", //닉네임
             'total_kcal': detail['total_kcal'] ?? 0, // 섭취 칼로리
             'total_car': detail['total_car'] ?? 0, // 섭취 탄수화물
             'total_prot': detail['total_prot'] ?? 0, // 섭취 단백질
@@ -93,6 +101,7 @@ class _HomeScreenState extends State<HomeScreen> {
             'rec_fat': detail['rec_fat'] ?? 70, // 권장 지방
           };
           _isLoading = false; // 데이터를 성공적으로 받으면 로딩 해제
+          logger.i('홈 화면 응답 : $jsonData');
         });
       }
     } catch (e) {
@@ -194,10 +203,13 @@ class _HomeScreenState extends State<HomeScreen> {
       _selectedIndex = index;
     });
 
-    // 홈 탭(인덱스 0)이 선택될 때마다 데이터를 다시 불러옴
-    if (index == 0) {
-      _loadNutritionData(); // 홈 탭이 선택될 때마다 데이터를 새로 받아옴
-    }
+    final tokenManager = TokenManager(context: context);
+    tokenManager.refreshToken().then((_) {
+      // 홈 탭(인덱스 0)이 선택될 때마다 데이터를 다시 불러옴
+      if (index == 0) {
+        _loadNutritionData(); // 홈 탭이 선택될 때마다 데이터를 새로 받아옴
+      }
+    });
 
     String selectedTab = tabs[index];
     context.go('/home/$selectedTab');
@@ -259,6 +271,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
           // 화면 내용 표시
           Expanded(
+            // 스크롤이 필요한 영역 감싸기
             child: IndexedStack(
               index: _selectedIndex,
               children: [
@@ -282,17 +295,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
   PreferredSizeWidget _buildAppBar() {
     return PreferredSize(
-      preferredSize: const Size.fromHeight(80),
+      preferredSize: const Size.fromHeight(55),
       child: Padding(
-        padding: const EdgeInsets.only(top: 20),
+        padding: const EdgeInsets.only(top: 5),
         child: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: const Color.fromARGB(255, 232, 245, 233),
           elevation: 0,
           centerTitle: true,
           title: Text(
-            _selectedIndex == 0 ? "홈 화면" : "기록 화면",
+            _selectedIndex == 0 ? "WELLNESS" : "오늘 식단",
             style: const TextStyle(
-              fontFamily: "myfonts",
+              fontSize: 23,
+              fontFamily: "appname",
               fontWeight: FontWeight.bold,
               color: Colors.black,
             ),
@@ -330,7 +344,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHomeScreen(BuildContext context) {
-    String nickname = jsonData['nickname'] ?? "이름";
+    String nickname = jsonData['user_nickname'] ?? "이름";
     int totalKcal = (jsonData['total_kcal'] ?? 0).toInt();
     int recKcal = (jsonData['rec_kcal'] ?? 0).toInt();
     double intakeRatio = totalKcal / recKcal;
@@ -345,11 +359,11 @@ class _HomeScreenState extends State<HomeScreen> {
     int recFat = (jsonData['rec_fat'] ?? 0).toInt();
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 30, left: 25, right: 25),
+      padding: const EdgeInsets.only(bottom: 15, left: 25, right: 25),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Gaps.v10,
+          Gaps.v14,
           Align(
             alignment: Alignment.center,
             child: Text(
@@ -362,7 +376,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          Gaps.v20,
+          Gaps.v10,
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -399,7 +413,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               Column(
                 children: [
-                  Gaps.v44,
+                  Gaps.v32,
                   SizedBox(
                     height: 200.0,
                     width: 200.0,
@@ -454,7 +468,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     text: TextSpan(
                       style: const TextStyle(
                         fontFamily: "myfonts",
-                        fontSize: 20,
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                       children: [
@@ -534,7 +548,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildBottomNavigationBar(BuildContext context) {
     return Container(
-      color: const Color.fromARGB(57, 39, 138, 26),
+      color: const Color.fromARGB(255, 232, 245, 233),
       child: Padding(
         padding: EdgeInsets.symmetric(
           vertical: MediaQuery.of(context).padding.bottom > 0
@@ -545,7 +559,7 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             NavTab(
-              text: "홈",
+              text: "오늘 하루",
               isSelected: _selectedIndex == 0,
               icon: FontAwesomeIcons.houseUser,
               onTap: () => _onTap(0),
@@ -577,7 +591,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             Gaps.h48,
             NavTab(
-              text: "나의 오늘",
+              text: "오늘 식단",
               isSelected: _selectedIndex == 1,
               icon: FontAwesomeIcons.utensils,
               onTap: () => _onTap(1),

@@ -7,11 +7,15 @@ import 'package:frontend/features/home/views/home_screen.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logger/logger.dart';
 
+/*
+Refresh Token이 만료되어 로그인 화면으로 진입
+*/
+
 final Logger _logger = Logger();
 
 class LoginScreen extends StatefulWidget {
   static String routeName = "login";
-  static String routeURL = "/";
+  static String routeURL = "/login";
 
   const LoginScreen({super.key});
 
@@ -54,21 +58,8 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       }
     } else {
-      _logger.i('No token found, proceeding with Kakao login');
-      // 토큰이 없으면 카카오 로그인 진행 후 생년월일 입력 화면으로 이동
-      final userInfo = await _kakaoLoginService.signInWithKakao();
-      _logger.i('Kakao login response: $userInfo');
-
-      if (userInfo['nickname'] != null && userInfo['email'] != null) {
-        _logger.i('Navigating to BirthdayScreen after Kakao login');
-        context.go('/birthday', extra: {
-          'nickname': userInfo['nickname'],
-          'email': userInfo['email'],
-        }); // 생년월일 입력 화면으로 이동
-      } else {
-        _logger.w('Kakao login failed or returned incomplete info');
-        // 로그인 실패 처리 로직을 추가할 수 있습니다.
-      }
+      _logger.w('Kakao login failed or returned incomplete info');
+      // 로그인 실패 처리 로직을 추가할 수 있습니다.
     }
   }
 
@@ -149,14 +140,14 @@ class _KakaoLoginButtonState extends State<_KakaoLoginButton> {
     return GestureDetector(
       onTap: () => widget.onTap(context),
       child: Container(
-        width: MediaQuery.of(context).size.width * 0.8,
+        width: MediaQuery.of(context).size.width * 0.7,
         padding: const EdgeInsets.all(Sizes.size12),
         decoration: BoxDecoration(
           color: Colors.transparent,
           borderRadius: BorderRadius.circular(12.0),
         ),
         child: Image.asset(
-          'assets/images/kakao_signup.png',
+          'assets/images/kakao_login_medium_wide.png',
           fit: BoxFit.contain,
         ),
       ),

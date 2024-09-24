@@ -55,18 +55,52 @@ class _BirthdayScreenState extends ConsumerState<BirthdayScreen> {
   void _onNextTap() {
     var logger = Logger();
 
-    // 상태에 생년월일 저장
-    final state = ref.read(signUpForm.notifier).state;
-    ref.read(signUpForm.notifier).state = {
-      ...state,
-      "nickname": nickname,
-      "email": email,
-      "birthday": _birthdayController.text,
-    };
+    // 선택된 생년월일 가져오기
+    DateTime selectedDate = initialDate;
+    DateTime currentDate = DateTime.now();
 
-    logger.i('${ref.read(signUpForm)}');
+    // 생년월일이 현재 날짜에서 1년을 초과하지 않는지 확인
+    if (currentDate.difference(selectedDate).inDays <= 365) {
+      // 1년 이하인 경우 팝업 표시
+      _showBirthdayConfirmationDialog();
+    } else {
+      // 상태에 생년월일 저장
+      final state = ref.read(signUpForm.notifier).state;
+      ref.read(signUpForm.notifier).state = {
+        ...state,
+        "nickname": nickname,
+        "email": email,
+        "birthday": _birthdayController.text,
+      };
 
-    context.goNamed(GenderScreen.routeName);
+      logger.i('${ref.read(signUpForm)}');
+
+      context.goNamed(GenderScreen.routeName);
+    }
+  }
+
+  void _showBirthdayConfirmationDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text(
+            "생년월일 확인",
+          ),
+          content: const Text(
+            "생년월일을 다시 확인해주세요.",
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // 팝업 닫기
+              },
+              child: const Text("확인"),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _setTextFieldDate(DateTime date) {

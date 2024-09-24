@@ -95,11 +95,9 @@ class _WeightScreenState extends ConsumerState<WeightScreen> {
       if (success) {
         // 회원가입 성공 로그 추가
         logger.i('회원가입 성공');
-        // 회원가입 성공 시 홈 화면으로 이동
-        context.goNamed(
-          HomeScreen.routeName,
-          pathParameters: {'tab': 'home'}, // 'home' 탭으로 이동
-        );
+
+        // 회원가입 성공 팝업 띄우기
+        _showSignupCompleteDialog();
       } else {
         // 회원가입 실패 로그 추가
         logger.e('회원가입 실패');
@@ -109,6 +107,32 @@ class _WeightScreenState extends ConsumerState<WeightScreen> {
       // 예외 처리 로그 추가
       logger.e('회원가입 중 에러 발생: $e');
     }
+  }
+
+  // 회원가입 완료 팝업을 띄우는 함수
+  void _showSignupCompleteDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('회원가입 완료'),
+          content: const Text('회원가입이 성공적으로 완료되었어요.'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('확인'),
+              onPressed: () {
+                Navigator.of(context).pop(); // 팝업 닫기
+                // 홈 화면으로 이동
+                context.goNamed(
+                  HomeScreen.routeName,
+                  pathParameters: {'tab': 'home'}, // 'home' 탭으로 이동
+                );
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _onIntegerChanged(String value) {

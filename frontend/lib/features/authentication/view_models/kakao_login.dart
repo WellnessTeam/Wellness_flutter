@@ -1,9 +1,9 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:frontend/features/authentication/repos/token_storage.dart';
 import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart';
 import 'package:logger/logger.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class KakaoLoginService {
   final Logger _logger = Logger();
@@ -17,11 +17,11 @@ class KakaoLoginService {
       if (await isKakaoTalkInstalled()) {
         // 카카오톡으로 로그인
         token = await UserApi.instance.loginWithKakaoTalk();
-        _logger.i('카카오톡으로 로그인 성공, token: ${token.accessToken}');
+        _logger.i('카카오톡으로 로그인 성공, kakao_token: ${token.accessToken}');
       } else {
         // 카카오 계정으로 로그인
         token = await UserApi.instance.loginWithKakaoAccount();
-        _logger.i('카카오계정으로 로그인 성공, token: ${token.accessToken}');
+        _logger.i('카카오계정으로 로그인 성공, kakao_token: ${token.accessToken}');
       }
 
       // 사용자 정보 가져오기
@@ -42,11 +42,11 @@ class KakaoLoginService {
     }
   }
 
-  // 로그인 API 호출
+  // 로그인 API 호출 (신규/기존 유저 확인)
   Future<bool> loginToBackend(String nickname, String email) async {
     try {
       final response = await http.post(
-        Uri.parse('http://43.202.124.234:8000/api/v1/user/login'),
+        Uri.parse(dotenv.env['LOGIN_API_URL'] ?? ''),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -61,11 +61,17 @@ class KakaoLoginService {
         final accessToken = data['detail']['wellness_info']['access_token'];
         final refreshToken = data['detail']['wellness_info']['refresh_token'];
 
-        // 엑세스 토큰저장
+        // 토큰 저장
         await TokenStorage.updateTokensIfNeeded(accessToken, refreshToken);
+
         _logger.i(
-            'Tokens are saved successfully: Acess : $accessToken / Refresh : $refreshToken');
-        return true;
+            'Tokens are saved successfully: Access: $accessToken / Refresh: $refreshToken');
+        _logger.i(response.body);
+
+        return true; // 로그인 성공
+      } else if (jsonDecode(response.body)['detail'] == "User not found") {
+        _logger.i('User not found. This is a new user.');
+        return false; // 신규 유저
       } else {
         _logger.e('Failed to login: ${response.body}');
         return false;
@@ -76,20 +82,11 @@ class KakaoLoginService {
     }
   }
 
-  // 로컬 저장소에 토큰이 존재하는지 확인하는 메서드
-  Future<bool> hasValidToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    String? storedToken = prefs.getString('access_token');
-    return storedToken != null;
-  }
-
   // 로그아웃 로직 (토큰은 삭제하지 않음)
   Future<void> signOut() async {
     try {
       await UserApi.instance.logout(); // 카카오 로그아웃 호출
       _logger.i('카카오 로그아웃 성공');
-
-      // 토큰을 남겨두고, 로그아웃 상태만 처리
       _logger.i('Token remains in local storage');
     } catch (e) {
       _logger.e('카카오 로그아웃 실패: $e');
