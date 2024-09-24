@@ -93,7 +93,14 @@ flutter:
     - assets/images/kakao_login_medium_wide.png
     - assets/images/kakao_signup.png
     - assets/images/new_rabbit.png
-    - assets/images/wellness_background.png
+    # - assets/images/wellness_background.png
+    # - assets/images/splashScreen.png
+    # - assets/images/splashScreen2.png
+    # - assets/images/splashScreen3.png
+    # - assets/images/splash_screenv1.png
+    - assets/images/wellness_logo.png
+    - assets/images/splashscreenv2.png
+    - assets/images/splash_screenv3.png
     - assets/images/food_icons/chicken.png
     - assets/images/food_icons/rice-bowl.png
     - assets/images/food_icons/tteokbokki.png

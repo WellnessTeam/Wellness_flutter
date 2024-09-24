@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:frontend/features/home/views/widgets/nutrition_bar.dart';
 import 'package:frontend/features/home/repos/analyze_repository.dart';
 import 'package:logger/logger.dart';
+import 'package:frontend/features/home/providers/token_manager.dart';
 
 class AnalyzePage extends StatefulWidget {
   final XFile image;
@@ -39,14 +40,20 @@ class _AnalyzePageState extends State<AnalyzePage> {
   @override
   void initState() {
     super.initState();
-    _uploadImageAndLoadFoodData();
+
+    // TokenManager 인스턴스 생성
+    final tokenManager = TokenManager(context: context);
+
+    tokenManager.refreshToken().then((_) {
+      _uploadImageAndLoadFoodData();
+    });
   }
 
   Future<void> _uploadImageAndLoadFoodData() async {
     try {
       // JSON 데이터를 받아옵니다.
       final Map<String, dynamic> jsonData = await analyzeRepository
-          .uploadImageAndFetchData(File(widget.image.path));
+          .uploadImageAndFetchData(File(widget.image.path), context);
 
       // API 응답 전체를 로그에 출력하여 확인
       logger.i('API 응답: $jsonData');
@@ -84,6 +91,10 @@ class _AnalyzePageState extends State<AnalyzePage> {
     }
   }
 
+  Future<File> _loadImage() async {
+    return File(widget.image.path);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -116,12 +127,38 @@ class _AnalyzePageState extends State<AnalyzePage> {
                         fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 10),
-                  Center(
-                    child: Image.file(
-                      File(widget.image.path),
-                      width: 250,
-                      fit: BoxFit.cover,
-                    ),
+                  FutureBuilder<File>(
+                    future: _loadImage(), // 이미지를 비동기로 로드
+                    builder:
+                        (BuildContext context, AsyncSnapshot<File> snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(
+                          child:
+                              CircularProgressIndicator(), // 이미지 로딩 중 로딩 인디케이터
+                        );
+                      } else if (snapshot.hasError) {
+                        return const Icon(
+                          Icons.error,
+                          color: Colors.red,
+                          size: 100,
+                        ); // 에러 발생 시 에러 아이콘 표시
+                      } else {
+                        return Center(
+                          child: Container(
+                            width: 250, // 이미지가 차지할 최대 가로 크기
+                            height: 250, // 이미지가 차지할 최대 세로 크기
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                  color: Colors.grey), // 테두리 추가 (원하는 경우)
+                            ),
+                            child: FittedBox(
+                              fit: BoxFit.contain, // 이미지를 영역에 맞게 축소하지만 잘리지 않음
+                              child: Image.file(snapshot.data!),
+                            ),
+                          ),
+                        );
+                      }
+                    },
                   ),
                   const SizedBox(height: 15),
                   Text(
@@ -220,9 +257,9 @@ class _AnalyzePageState extends State<AnalyzePage> {
                             // 저장 및 기록 데이터 가져오기
                             final List<Map<String, dynamic>> records =
                                 await analyzeRepository
-                                    .saveAndFetchMealRecords();
+                                    .saveAndFetchMealRecords(context);
                             logger.i(
-                                'Records to be sent to RecordScreen: $records'); // 데이터 확인용 로그
+                                'Record saved successfully: $records'); // 데이터 확인용 로그
 
                             if (mounted) {
                               // 데이터를 RecordScreen으로 전달하며 네비게이션
@@ -230,11 +267,11 @@ class _AnalyzePageState extends State<AnalyzePage> {
                             }
                           } catch (e) {
                             logger.e('기록 저장 중 오류 발생: $e');
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('기록 저장에 실패했습니다. 다시 시도해주세요.'),
-                              ),
-                            );
+                            // ScaffoldMessenger.of(context).showSnackBar(
+                            //   const SnackBar(
+                            //     content: Text('기록 저장에 실패했습니다. 다시 시도해주세요.'),
+                            //   ),
+                            // );
                           }
                         },
                         style: ElevatedButton.styleFrom(

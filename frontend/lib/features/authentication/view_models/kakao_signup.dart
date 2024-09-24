@@ -4,6 +4,7 @@ import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart'; // Kakao SDK import
 import 'dart:async'; // TimeoutException 사용을 위해 추가
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class KakaoSignupService {
   final Logger _logger = Logger();
@@ -60,7 +61,7 @@ class KakaoSignupService {
 
       final response = await http
           .post(
-            Uri.parse('http://43.202.124.234:8000/api/v1/user/register'),
+            Uri.parse(dotenv.env['SIGNUP_API_URL'] ?? ''),
             headers: {
               'Content-Type': 'application/json',
             },
@@ -109,9 +110,10 @@ class KakaoSignupService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('access_token', accessToken); // access_token 저장
       await prefs.setString('refresh_token', refreshToken); // refresh_token 저장
+      await prefs.setBool('signUp', true);
 
       _logger.i(
-          'Tokens saved locally: access_token=$accessToken, refresh_token=$refreshToken');
+          'Tokens saved locally: access_token=$accessToken, refresh_token=$refreshToken, signUp= true');
     } catch (e) {
       _logger.e('Failed to save tokens: $e');
       throw Exception('토큰 저장 실패');
