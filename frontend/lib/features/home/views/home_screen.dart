@@ -129,11 +129,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   //progress bar 색상설정
   Color _getProgressColor(double intakeRatio) {
-    if (intakeRatio < 0.5) {
+    if (intakeRatio < 0.545) {
       return const Color.fromARGB(255, 255, 179, 80); // 50% 이하일 때 초록색
-    } else if (intakeRatio >= 0.5 && intakeRatio < 0.75) {
+    } else if (intakeRatio >= 0.545 && intakeRatio < 0.745) {
       return const Color.fromARGB(255, 97, 170, 87); // 50%에서 80% 사이일 때 노란색
-    } else if (intakeRatio >= 0.75 && intakeRatio <= 1.0) {
+    } else if (intakeRatio >= 0.745 && intakeRatio <= 1.0) {
       return const Color.fromARGB(255, 68, 143, 255); // 80%에서 100% 사이일 때 주황색
     } else {
       return const Color.fromARGB(255, 255, 61, 87); // 100% 초과 시 빨간색
@@ -218,6 +218,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       extendBodyBehindAppBar: false,
       appBar: _buildAppBar(), // AppBar를 동적으로 설정
       resizeToAvoidBottomInset: false,

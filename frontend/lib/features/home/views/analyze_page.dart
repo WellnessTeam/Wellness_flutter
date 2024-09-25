@@ -149,7 +149,8 @@ class _AnalyzePageState extends State<AnalyzePage> {
                             height: 250, // 이미지가 차지할 최대 세로 크기
                             decoration: BoxDecoration(
                               border: Border.all(
-                                  color: Colors.grey), // 테두리 추가 (원하는 경우)
+                                  color: const Color.fromARGB(
+                                      255, 255, 255, 255)), // 테두리 추가 (원하는 경우)
                             ),
                             child: FittedBox(
                               fit: BoxFit.contain, // 이미지를 영역에 맞게 축소하지만 잘리지 않음
