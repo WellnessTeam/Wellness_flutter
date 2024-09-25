@@ -156,7 +156,11 @@ class _RecordScreenState extends State<RecordScreen> {
                 Expanded(
                   child: meals.isEmpty
                       ? const Center(
-                          child: Text('오늘의 기록을 추가해보세요!')) // 기록이 없을 때 메시지 표시
+                          child: Text(
+                          '오늘의 기록을 추가해보세요!',
+                          style: TextStyle(
+                              fontFamily: "pretendart-regular", fontSize: 16),
+                        )) // 기록이 없을 때 메시지 표시
                       : ListView.builder(
                           itemCount: meals.length,
                           itemBuilder: (context, index) {
