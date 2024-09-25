@@ -140,7 +140,7 @@ class _KakaoLoginButtonState extends State<_KakaoLoginButton> {
     return GestureDetector(
       onTap: () => widget.onTap(context),
       child: Container(
-        width: MediaQuery.of(context).size.width * 0.7,
+        width: MediaQuery.of(context).size.width * 0.8,
         padding: const EdgeInsets.all(Sizes.size12),
         decoration: BoxDecoration(
           color: Colors.transparent,
