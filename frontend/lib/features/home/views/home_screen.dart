@@ -12,8 +12,8 @@ import 'record_screen.dart';
 import 'package:frontend/features/home/repos/nutrition_repository.dart'; // 리포지토리 추가
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
-import 'package:frontend/features/authentication/view_models/kakao_login.dart';
-import 'package:frontend/features/authentication/views/login_screen.dart';
+//import 'package:frontend/features/authentication/view_models/kakao_login.dart';
+//import 'package:frontend/features/authentication/views/login_screen.dart';
 import 'package:frontend/features/home/providers/token_manager.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -50,7 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
       NutritionRepository(); // API 리포지토리
 
   bool _isLoading = true; // 로딩상태 관리
-  bool _isLatestFirst = true; // 정렬 상태
+  final bool _isLatestFirst = true; // 정렬 상태
   late int _selectedIndex;
   bool _isRequestingPermission = false;
   var logger = Logger();
@@ -115,17 +115,17 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // 로그아웃 처리
-  Future<void> _logout() async {
-    try {
-      await KakaoLoginService().signOut(); // 카카오 로그아웃 호출
-      // 로그아웃 후 로그인 화면으로 이동
-      context.go(LoginScreen.routeURL);
-    } catch (e) {
-      // 에러 처리
-      print('로그아웃 실패: $e');
-    }
-  }
+  // // 로그아웃 처리
+  // Future<void> _logout() async {
+  //   try {
+  //     await KakaoLoginService().signOut(); // 카카오 로그아웃 호출
+  //     // 로그아웃 후 로그인 화면으로 이동
+  //     context.go(LoginScreen.routeURL);
+  //   } catch (e) {
+  //     // 에러 처리
+  //     print('로그아웃 실패: $e');
+  //   }
+  // }
 
   //progress bar 색상설정
   Color _getProgressColor(double intakeRatio) {
@@ -218,60 +218,13 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: false,
       appBar: _buildAppBar(), // AppBar를 동적으로 설정
       resizeToAvoidBottomInset: false,
       body: Column(
         children: [
-          // 기록 화면일 때만 ToggleButtons 표시
-          if (_selectedIndex == 1)
-            Padding(
-              padding: const EdgeInsets.all(0),
-              child: ToggleButtons(
-                constraints: const BoxConstraints(
-                  minHeight: 30.0, // 적절한 높이 설정
-                  minWidth: 70.0, // 버튼의 너비도 설정
-                ),
-                isSelected: [_isLatestFirst, !_isLatestFirst], // 선택 상태
-                onPressed: (index) {
-                  setState(() {
-                    // 누른 버튼의 상태를 반대로 변경
-                    _isLatestFirst = index == 0;
-                  });
-                },
-                color: Colors.black,
-                selectedColor: const Color.fromARGB(255, 0, 0, 0), // 선택된 텍스트 색상
-                fillColor:
-                    const Color.fromARGB(255, 232, 245, 233), // 선택된 버튼의 배경색
-                borderRadius: BorderRadius.circular(10),
-                borderColor: Colors.black,
-                selectedBorderColor: Colors.black, // 선택된 버튼의 테두리 색상
-                borderWidth: 1.2,
-                children: const [
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    child: Text('최신순',
-                        style: TextStyle(
-                          fontFamily: "pretendard-regular",
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        )),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    child: Text('과거순',
-                        style: TextStyle(
-                          fontFamily: "pretendard-regular",
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        )),
-                  ),
-                ],
-              ),
-            ),
-
           // 화면 내용 표시
           Expanded(
-            // 스크롤이 필요한 영역 감싸기
             child: IndexedStack(
               index: _selectedIndex,
               children: [
@@ -299,7 +252,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Padding(
         padding: const EdgeInsets.only(top: 5),
         child: AppBar(
-          backgroundColor: const Color.fromARGB(255, 232, 245, 233),
+          backgroundColor: const Color.fromARGB(255, 232, 245, 233), // 앱바 색상 고정
           elevation: 0,
           centerTitle: true,
           title: Text(
@@ -318,26 +271,26 @@ class _HomeScreenState extends State<HomeScreen> {
             statusBarColor: Colors.white, // 상태바 배경색 고정
             statusBarIconBrightness: Brightness.dark, // 상태바 아이콘 색상 고정
           ),
-          actions: [
-            if (_selectedIndex == 0)
-              GestureDetector(
-                onTap: _logout, // 로그아웃 기능 연결
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16), // 텍스트 간격 조정
-                  child: Center(
-                    child: Text(
-                      "로그아웃",
-                      style: TextStyle(
-                        fontFamily: "pretendard-regular",
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.red, // 로그아웃 텍스트 색상
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-          ],
+          // actions: [
+          //   if (_selectedIndex == 0)
+          //     GestureDetector(
+          //       onTap: _logout, // 로그아웃 기능 연결
+          //       child: const Padding(
+          //         padding: EdgeInsets.symmetric(horizontal: 16), // 텍스트 간격 조정
+          //         child: Center(
+          //           child: Text(
+          //             "로그아웃",
+          //             style: TextStyle(
+          //               fontFamily: "pretendard-regular",
+          //               fontSize: 16,
+          //               fontWeight: FontWeight.w600,
+          //               color: Colors.red, // 로그아웃 텍스트 색상
+          //             ),
+          //           ),
+          //         ),
+          //       ),
+          //     ),
+          // ],
         ),
       ),
     );
@@ -430,7 +383,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             height: 40.0,
                             child: Center(
                               child: Text(
-                                "${(intakeRatio * 100).toStringAsFixed(0)}%",
+                                "${(intakeRatio * 100).round()}%",
                                 style: const TextStyle(
                                   fontFamily: "myfonts",
                                   fontWeight: FontWeight.bold,
