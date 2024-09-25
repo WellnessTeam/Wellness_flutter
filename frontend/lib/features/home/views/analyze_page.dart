@@ -239,19 +239,21 @@ class _AnalyzePageState extends State<AnalyzePage> {
                           );
                         },
                         style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                const Color.fromARGB(57, 39, 138, 26)),
+                          foregroundColor: Colors.green,
+                          backgroundColor: const Color.fromRGBO(
+                              232, 245, 233, 1), // 눌렸을 때의 색상
+                        ),
                         child: const Text(
                           '취소',
                           style: TextStyle(
-                              fontFamily: "pretendard-regular",
-                              fontSize: Sizes.size18,
-                              fontWeight: FontWeight.w700,
-                              color: Color.fromARGB(255, 255, 255, 255)),
+                            fontFamily: "pretendard-regular",
+                            fontSize: Sizes.size18,
+                            fontWeight: FontWeight.w700,
+                            color: Color.fromARGB(255, 0, 0, 0),
+                          ),
                         ),
                       ),
                       ElevatedButton(
-                        // AnalyzePage에서 '완료' 버튼의 onPressed 콜백
                         onPressed: () async {
                           try {
                             // 저장 및 기록 데이터 가져오기
@@ -267,23 +269,21 @@ class _AnalyzePageState extends State<AnalyzePage> {
                             }
                           } catch (e) {
                             logger.e('기록 저장 중 오류 발생: $e');
-                            // ScaffoldMessenger.of(context).showSnackBar(
-                            //   const SnackBar(
-                            //     content: Text('기록 저장에 실패했습니다. 다시 시도해주세요.'),
-                            //   ),
-                            // );
                           }
                         },
                         style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                const Color.fromARGB(57, 39, 138, 26)),
+                          foregroundColor: Colors.blue,
+                          backgroundColor: const Color.fromARGB(
+                              255, 218, 248, 220), // 눌렸을 때의 색상
+                        ),
                         child: const Text(
                           '완료',
                           style: TextStyle(
-                              fontFamily: "pretendard-regular",
-                              fontSize: Sizes.size18,
-                              fontWeight: FontWeight.w700,
-                              color: Color.fromARGB(255, 255, 255, 255)),
+                            fontFamily: "pretendard-regular",
+                            fontSize: Sizes.size18,
+                            fontWeight: FontWeight.w700,
+                            color: Color.fromARGB(255, 0, 0, 0),
+                          ),
                         ),
                       ),
                     ],

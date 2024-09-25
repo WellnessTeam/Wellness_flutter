@@ -54,7 +54,14 @@ class _GenderScreenState extends ConsumerState<GenderScreen> {
               IconButton(
                 icon: const Icon(Icons.arrow_back),
                 onPressed: () {
-                  context.goNamed("birthday");
+                  final state = ref.read(signUpForm.notifier).state;
+                  context.goNamed(
+                    "birthday",
+                    extra: {
+                      "nickname": state["nickname"],
+                      "email": state["email"],
+                    },
+                  );
                 },
               ),
               const Padding(

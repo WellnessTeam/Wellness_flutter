@@ -131,7 +131,7 @@ class AnalyzeRepository {
     // 날짜 형식 변환
     String originalDate = analysisData!['date'];
     // 파싱 가능한 형식으로 변환
-    DateTime parsedDate = DateFormat('yyyy:MM:dd HH:mm:ss').parse(originalDate);
+    DateTime parsedDate = DateFormat('yyyy-MM-dd HH:mm:ss').parse(originalDate);
     // 서버에서 기대하는 형식으로 변환
     String formattedDate = DateFormat('yyyy-MM-dd HH:mm:ss').format(parsedDate);
 
@@ -200,7 +200,7 @@ class AnalyzeRepository {
             '오늘 드신 음식인가요?',
           ),
           content: const Text(
-            '아직은 오늘 먹은 음식만 업로드할 수 있어요',
+            '아직은 오늘 먹은 음식만 업로드할 수 있어요.',
           ),
           actions: <Widget>[
             TextButton(
