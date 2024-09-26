@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-// import 'package:logger/logger.dart';
 
 class NutritionBar extends StatefulWidget {
   final String label; // 영양소 이름
@@ -69,14 +68,27 @@ class _NutritionBarState extends State<NutritionBar>
                     fontSize: 16,
                     fontWeight: FontWeight.bold),
               ),
-              // 섭취 / 권장 (비율%) 텍스트 표시
-              Text(
-                "${widget.intake.round()} / ${widget.recommended.round()} g (${(_animation.value * 100).toStringAsFixed(0)}%)",
-                style: const TextStyle(
-                  fontFamily: "pretendart-regular",
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Color.fromARGB(255, 0, 0, 0),
+              // 섭취 / 권장 텍스트와 퍼센트 부분에 다른 스타일 적용
+              Text.rich(
+                TextSpan(
+                  text:
+                      "${widget.intake.round()} / ${widget.recommended.round()} g ",
+                  style: const TextStyle(
+                    fontFamily: "pretendart-regular",
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color.fromARGB(255, 0, 0, 0), // 기본 텍스트 색상
+                  ),
+                  children: [
+                    TextSpan(
+                      text: "(${(_animation.value * 100).toStringAsFixed(0)}%)",
+                      style: TextStyle(
+                        color: (_animation.value * 100) > 100
+                            ? Colors.red
+                            : const Color.fromARGB(255, 0, 0, 0), // 퍼센트 부분 색상
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
