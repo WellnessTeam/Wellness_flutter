@@ -36,6 +36,7 @@ class _AnalyzePageState extends State<AnalyzePage> {
   final Logger logger = Logger();
 
   bool _isLoading = true; // 데이터 로딩 상태를 나타내는 변수
+  bool _isButtonDisabled = false;
 
   @override
   void initState() {
@@ -255,23 +256,34 @@ class _AnalyzePageState extends State<AnalyzePage> {
                         ),
                       ),
                       ElevatedButton(
-                        onPressed: () async {
-                          try {
-                            // 저장 및 기록 데이터 가져오기
-                            final List<Map<String, dynamic>> records =
-                                await analyzeRepository
-                                    .saveAndFetchMealRecords(context);
-                            logger.i(
-                                'Record saved successfully: $records'); // 데이터 확인용 로그
+                        onPressed: _isButtonDisabled
+                            ? null
+                            : () async {
+                                setState(() {
+                                  _isButtonDisabled = true; // 한번 누른 후 버튼 비활성화
+                                });
 
-                            if (mounted) {
-                              // 데이터를 RecordScreen으로 전달하며 네비게이션
-                              context.go('/home/record', extra: records);
-                            }
-                          } catch (e) {
-                            logger.e('기록 저장 중 오류 발생: $e');
-                          }
-                        },
+                                try {
+                                  // 저장 및 기록 데이터 가져오기
+                                  final List<Map<String, dynamic>> records =
+                                      await analyzeRepository
+                                          .saveAndFetchMealRecords(context);
+                                  logger.i(
+                                      'Record saved successfully: $records'); // 데이터 확인용 로그
+
+                                  if (mounted) {
+                                    // 데이터를 RecordScreen으로 전달하며 네비게이션
+                                    context.go('/home/record', extra: records);
+                                  }
+                                } catch (e) {
+                                  logger.e('기록 저장 중 오류 발생: $e');
+                                } finally {
+                                  setState(() {
+                                    _isButtonDisabled =
+                                        false; // API 요청 완료 후 버튼 활성화
+                                  });
+                                }
+                              },
                         style: ElevatedButton.styleFrom(
                           foregroundColor: Colors.blue,
                           backgroundColor: const Color.fromARGB(
@@ -286,7 +298,7 @@ class _AnalyzePageState extends State<AnalyzePage> {
                             color: Color.fromARGB(255, 0, 0, 0),
                           ),
                         ),
-                      ),
+                      )
                     ],
                   ),
                 ],
